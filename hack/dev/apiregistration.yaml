@@ -32,12 +32,12 @@ subsets:
 apiVersion: apiregistration.k8s.io/v1beta1
 kind: APIService
 metadata:
-  name: v1alpha1.admission.soter.cloud
+  name: v1alpha1.scanner.soter.cloud
   labels:
     app: test-scanner
 spec:
   insecureSkipTLSVerify: true
-  group: admission.soter.cloud
+  group: scanner.soter.cloud
   groupPriorityMinimum: 1000
   versionPriority: 15
   service:
