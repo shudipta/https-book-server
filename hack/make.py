@@ -38,7 +38,7 @@ from os.path import expandvars, join, dirname
 libbuild.REPO_ROOT = expandvars('$GOPATH') + '/src/github.com/soter/scanner'
 BUILD_METADATA = libbuild.metadata(libbuild.REPO_ROOT)
 libbuild.BIN_MATRIX = {
-    'scanner': {
+    'soter-scanner': {
         'type': 'go',
         'go_version': True,
         'use_cgo': False,
@@ -75,17 +75,17 @@ def version():
 
 
 def fmt():
-    libbuild.ungroup_go_imports('*.go', 'pkg')
-    die(call('goimports -w *.go pkg'))
-    call('gofmt -s -w *.go pkg')
+    libbuild.ungroup_go_imports('cmd', 'pkg')
+    die(call('goimports -w cmd pkg'))
+    call('gofmt -s -w cmd pkg')
 
 
 def vet():
-    call('go vet *.go ./pkg/...')
+    call('go vet ./cmd/... ./pkg/...')
 
 
 def lint():
-    call('golint *.go')
+    call('golint ./cmd/...')
     call('golint ./pkg/...')
 
 
@@ -95,7 +95,7 @@ def gen():
 
 def build_cmd(name):
     cfg = libbuild.BIN_MATRIX[name]
-    entrypoint='*.go'
+    entrypoint="cmd/{0}/*.go".format(name)
     compress = libbuild.ENV in ['prod']
     if cfg['type'] == 'go':
         if 'distro' in cfg:
@@ -147,13 +147,13 @@ def update_registry():
 
 
 def install():
-    die(call('GO15VENDOREXPERIMENT=1 ' + libbuild.GOC + ' install .'))
+    die(call('GO15VENDOREXPERIMENT=1 ' + libbuild.GOC + ' install ./cmd/...'))
 
 
 def default():
     gen()
     fmt()
-    die(call('GO15VENDOREXPERIMENT=1 ' + libbuild.GOC + ' install .'))
+    die(call('GO15VENDOREXPERIMENT=1 ' + libbuild.GOC + ' install ./cmd/...'))
 
 
 def test(type, *args):
