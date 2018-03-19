@@ -1,0 +1,53 @@
+package cmds
+
+import (
+	"flag"
+	"log"
+	"os"
+	"strings"
+
+	v "github.com/appscode/go/version"
+	"github.com/appscode/kutil/tools/analytics"
+	"github.com/jpillora/go-ogle-analytics"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+	genericapiserver "k8s.io/apiserver/pkg/server"
+)
+
+const (
+	gaTrackingCode = "UA-62096468-20"
+)
+
+func NewRootCmd() *cobra.Command {
+	var (
+		enableAnalytics bool
+	)
+	var rootCmd = &cobra.Command{
+		Use:               "stash",
+		Short:             `Scanner by AppsCode - Backup your Kubernetes Volumes`,
+		Long:              `Scanner is a Kubernetes operator for restic. For more information, visit here: https://appscode.com/products/stash`,
+		DisableAutoGenTag: true,
+		PersistentPreRun: func(c *cobra.Command, args []string) {
+			c.Flags().VisitAll(func(flag *pflag.Flag) {
+				log.Printf("FLAG: --%s=%q", flag.Name, flag.Value)
+			})
+			if enableAnalytics && gaTrackingCode != "" {
+				if client, err := ga.NewClient(gaTrackingCode); err == nil {
+					client.ClientID(analytics.ClientID())
+					parts := strings.Split(c.CommandPath(), " ")
+					client.Send(ga.NewEvent(parts[0], strings.Join(parts[1:], "/")).Label(v.Version.Version))
+				}
+			}
+		},
+	}
+	rootCmd.PersistentFlags().AddGoFlagSet(flag.CommandLine)
+	// ref: https://github.com/kubernetes/kubernetes/issues/17162#issuecomment-225596212
+	flag.CommandLine.Parse([]string{})
+	rootCmd.PersistentFlags().BoolVar(&enableAnalytics, "analytics", enableAnalytics, "Send analytical events to Google Analytics")
+
+	rootCmd.AddCommand(v.NewCmdVersion())
+	stopCh := genericapiserver.SetupSignalHandler()
+	rootCmd.AddCommand(NewCmdRun(os.Stdout, os.Stderr, stopCh))
+
+	return rootCmd
+}
