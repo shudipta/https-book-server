@@ -25,7 +25,7 @@ func (s *ControllerOptions) AddGoFlags(fs *flag.FlagSet) {
 }
 
 func (s *ControllerOptions) AddFlags(fs *pflag.FlagSet) {
-	pfs := flag.NewFlagSet("stash", flag.ExitOnError)
+	pfs := flag.NewFlagSet("scanner", flag.ExitOnError)
 	s.AddGoFlags(pfs)
 	fs.AddGoFlagSet(pfs)
 }

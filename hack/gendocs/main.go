@@ -24,30 +24,30 @@ var (
 title: Reference
 description: Scanner CLI Reference
 menu:
-  product_stash_{{ .Version }}:
+  product_scanner_{{ .Version }}:
     identifier: reference
     name: Reference
     weight: 1000
-menu_name: product_stash_{{ .Version }}
+menu_name: product_scanner_{{ .Version }}
 ---
 `))
 
 	_ = template.Must(tplFrontMatter.New("cmd").Parse(`---
 title: {{ .Name }}
 menu:
-  product_stash_{{ .Version }}:
+  product_scanner_{{ .Version }}:
     identifier: {{ .ID }}
     name: {{ .Name }}
     parent: reference
 {{- if .RootCmd }}
     weight: 0
 {{ end }}
-product_name: stash
-menu_name: product_stash_{{ .Version }}
+product_name: scanner
+menu_name: product_scanner_{{ .Version }}
 section_menu_id: reference
 {{- if .RootCmd }}
 aliases:
-  - products/stash/{{ .Version }}/reference/
+  - products/scanner/{{ .Version }}/reference/
 {{ end }}
 ---
 `))

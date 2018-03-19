@@ -85,7 +85,7 @@ func (c *ScannerConfig) Complete() CompletedConfig {
 
 // New returns a new instance of ScannerServer from the given config.
 func (c completedConfig) New() (*ScannerServer, error) {
-	genericServer, err := c.GenericConfig.New("stash-apiserver", genericapiserver.EmptyDelegate) // completion is done in Complete, no need for a second time
+	genericServer, err := c.GenericConfig.New("scanner-apiserver", genericapiserver.EmptyDelegate) // completion is done in Complete, no need for a second time
 	if err != nil {
 		return nil, err
 	}

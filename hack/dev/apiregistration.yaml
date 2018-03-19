@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: stash-local-apiserver
+  name: scanner-local-apiserver
   namespace: ${STASH_NAMESPACE}
 spec:
   ports:
@@ -17,7 +17,7 @@ spec:
 apiVersion: v1
 kind: Endpoints
 metadata:
-  name: stash-local-apiserver
+  name: scanner-local-apiserver
   namespace: ${STASH_NAMESPACE}
 subsets:
 - addresses:
@@ -34,13 +34,13 @@ kind: APIService
 metadata:
   name: v1alpha1.admission.soter.cloud
   labels:
-    app: test-stash
+    app: test-scanner
 spec:
   insecureSkipTLSVerify: true
   group: admission.soter.cloud
   groupPriorityMinimum: 1000
   versionPriority: 15
   service:
-    name: stash-local-apiserver
+    name: scanner-local-apiserver
     namespace: ${STASH_NAMESPACE}
   version: v1alpha1

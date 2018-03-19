@@ -23,9 +23,8 @@ func NewRootCmd() *cobra.Command {
 		enableAnalytics bool
 	)
 	var rootCmd = &cobra.Command{
-		Use:               "stash",
-		Short:             `Scanner by AppsCode - Backup your Kubernetes Volumes`,
-		Long:              `Scanner is a Kubernetes operator for restic. For more information, visit here: https://appscode.com/products/stash`,
+		Use:               "scanner",
+		Short:             `Scanner by AppsCode - Docker Image Scanner`,
 		DisableAutoGenTag: true,
 		PersistentPreRun: func(c *cobra.Command, args []string) {
 			c.Flags().VisitAll(func(flag *pflag.Flag) {

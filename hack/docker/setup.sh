@@ -7,69 +7,39 @@ set -o pipefail
 GOPATH=$(go env GOPATH)
 SRC=$GOPATH/src
 BIN=$GOPATH/bin
+ROOT=$GOPATH
 REPO_ROOT=$GOPATH/src/github.com/soter/scanner
 
 source "$REPO_ROOT/hack/libbuild/common/lib.sh"
-source "$REPO_ROOT/hack/libbuild/common/public_image.sh"
+source "$REPO_ROOT/hack/libbuild/common/soter_image.sh"
 
 APPSCODE_ENV=${APPSCODE_ENV:-dev}
-IMG=stash
-RESTIC_VER=${RESTIC_VER:-0.8.3}
-RESTIC_BRANCH=${RESTIC_BRANCH:-stash-0.4.2}
+IMG=scanner
 
-DIST=$REPO_ROOT/dist
+DIST=$GOPATH/src/github.com/soter/scanner/dist
 mkdir -p $DIST
 if [ -f "$DIST/.tag" ]; then
-	export $(cat $DIST/.tag | xargs)
+    export $(cat $DIST/.tag | xargs)
 fi
 
 clean() {
-    pushd $REPO_ROOT/hack/docker
-    rm -rf restic stash Dockerfile
+    pushd $GOPATH/src/github.com/soter/scanner/hack/docker
+    rm scanner Dockerfile
     popd
 }
 
 build_binary() {
-    pushd $REPO_ROOT
+    pushd $GOPATH/src/github.com/soter/scanner
     ./hack/builddeps.sh
-    ./hack/make.py build stash
+    ./hack/make.py build
     detect_tag $DIST/.tag
-
-    if [ $RESTIC_VER = 'SOURCE' ]; then
-        rm -rf $DIST/restic
-        cd $DIST
-        clone https://github.com/appscode/restic.git
-        cd restic
-        checkout $RESTIC_BRANCH
-        echo "Build binary using golang docker image"
-        docker run --rm -ti \
-            -v `pwd`:/go/src/github.com/restic/restic \
-            -w /go/src/github.com/restic/restic golang:1.8.3-alpine go build ./cmd/restic
-        mv restic $DIST/restic-bin
-        rm -rf *
-        mv $DIST/restic-bin $DIST/restic/restic
-    else
-        # Download restic
-        rm -rf $DIST/restic
-        mkdir $DIST/restic
-        cd $DIST/restic
-        wget https://github.com/restic/restic/releases/download/v${RESTIC_VER}/restic_${RESTIC_VER}_linux_amd64.bz2
-        bzip2 -d restic_${RESTIC_VER}_linux_amd64.bz2
-        mv restic_${RESTIC_VER}_linux_amd64 restic
-    fi
-
     popd
 }
 
 build_docker() {
-    pushd $REPO_ROOT/hack/docker
-
-    # Download restic
-    cp $DIST/stash/stash-alpine-amd64 stash
-    chmod 755 stash
-
-    cp $DIST/restic/restic restic
-    chmod 755 restic
+    pushd $GOPATH/src/github.com/soter/scanner/hack/docker
+    cp $DIST/scanner/scanner-alpine-amd64 scanner
+    chmod 755 scanner
 
     cat >Dockerfile <<EOL
 FROM alpine
@@ -77,16 +47,15 @@ FROM alpine
 RUN set -x \
   && apk add --update --no-cache ca-certificates
 
-COPY restic /bin/restic
-COPY stash /bin/stash
+COPY scanner /usr/bin/scanner
 
-ENTRYPOINT ["/bin/stash"]
-EXPOSE 56789 56790
+USER nobody:nobody
+ENTRYPOINT ["scanner"]
 EOL
-    local cmd="docker build -t appscode/$IMG:$TAG ."
+    local cmd="docker build -t soter/$IMG:$TAG ."
     echo $cmd; $cmd
 
-    rm stash Dockerfile restic
+    rm scanner Dockerfile
     popd
 }
 
@@ -98,7 +67,7 @@ build() {
 docker_push() {
     if [ "$APPSCODE_ENV" = "prod" ]; then
         echo "Nothing to do in prod env. Are you trying to 'release' binaries to prod?"
-        exit 1
+        exit 0
     fi
     if [ "$TAG_STRATEGY" = "git_tag" ]; then
         echo "Are you trying to 'release' binaries to prod?"
