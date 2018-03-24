@@ -98,3 +98,39 @@ webhooks:
     resources:
     - replicasets
   failurePolicy: Fail
+- name: job.scanner.soter.cloud
+  clientConfig:
+    service:
+      namespace: default
+      name: kubernetes
+      path: /apis/scanner.soter.cloud/v1alpha1/jobs
+    caBundle: ${KUBE_CA}
+  rules:
+  - operations:
+    - CREATE
+    - UPDATE
+    apiGroups:
+    - batch
+    apiVersions:
+    - "*"
+    resources:
+    - jobs
+  failurePolicy: Fail
+- name: cronjob.scanner.soter.cloud
+  clientConfig:
+    service:
+      namespace: default
+      name: kubernetes
+      path: /apis/scanner.soter.cloud/v1alpha1/cronjobs
+    caBundle: ${KUBE_CA}
+  rules:
+  - operations:
+    - CREATE
+    - UPDATE
+    apiGroups:
+    - batch
+    apiVersions:
+    - "*"
+    resources:
+    - cronjobs
+  failurePolicy: Fail

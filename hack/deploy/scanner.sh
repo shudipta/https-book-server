@@ -51,13 +51,13 @@ export SCANNER_RUN_ON_MASTER=0
 export SCANNER_ENABLE_VALIDATING_WEBHOOK=false
 export SCANNER_DOCKER_REGISTRY=appscode
 export SCANNER_IMAGE_PULL_SECRET=
+export SCANNER_ENABLE_ANALYTICS=true
 export SCANNER_UNINSTALL=0
 
 KUBE_APISERVER_VERSION=$(kubectl version -o=json | $ONESSL jsonpath '{.serverVersion.gitVersion}')
 $ONESSL semver --check='>=1.9.0' $KUBE_APISERVER_VERSION
 if [ $? -eq 0 ]; then
     export SCANNER_ENABLE_VALIDATING_WEBHOOK=true
-    export SCANNER_ENABLE_MUTATING_WEBHOOK=true
 fi
 
 show_help() {
@@ -73,6 +73,7 @@ show_help() {
     echo "    --image-pull-secret            name of secret used to pull scanner operator images"
     echo "    --run-on-master                run scanner operator on master"
     echo "    --enable-validating-webhook    enable/disable validating webhooks for Scanner CRDs"
+    echo "    --enable-analytics             send usage events to Google Analytics (default: true)"
     echo "    --uninstall                    uninstall scanner"
 }
 
@@ -109,8 +110,13 @@ while test $# -gt 0; do
             val=`echo $1 | sed -e 's/^[^=]*=//g'`
             if [ "$val" = "false" ]; then
                 export SCANNER_ENABLE_VALIDATING_WEBHOOK=false
-            else
-                export SCANNER_ENABLE_VALIDATING_WEBHOOK=true
+            fi
+            shift
+            ;;
+        --enable-analytics*)
+            val=`echo $1 | sed -e 's/^[^=]*=//g'`
+            if [ "$val" = "false" ]; then
+                export SCANNER_ENABLE_ANALYTICS=false
             fi
             shift
             ;;
@@ -138,15 +144,18 @@ while test $# -gt 0; do
 done
 
 if [ "$SCANNER_UNINSTALL" -eq 1 ]; then
+    # delete webhooks and apiservices
+    kubectl delete validatingwebhookconfiguration -l app=scanner
+    kubectl delete mutatingwebhookconfiguration -l app=scanner
+    kubectl delete apiservice -l app=scanner
+    # delete scanner operator
     kubectl delete deployment -l app=scanner --namespace $SCANNER_NAMESPACE
     kubectl delete service -l app=scanner --namespace $SCANNER_NAMESPACE
     kubectl delete secret -l app=scanner --namespace $SCANNER_NAMESPACE
-    kubectl delete validatingwebhookconfiguration -l app=scanner --namespace $SCANNER_NAMESPACE
-    kubectl delete apiservice -l app=scanner --namespace $SCANNER_NAMESPACE
-    # Delete RBAC objects, if --rbac flag was used.
+    # delete RBAC objects, if --rbac flag was used.
     kubectl delete serviceaccount -l app=scanner --namespace $SCANNER_NAMESPACE
-    kubectl delete clusterrolebindings -l app=scanner --namespace $SCANNER_NAMESPACE
-    kubectl delete clusterrole -l app=scanner --namespace $SCANNER_NAMESPACE
+    kubectl delete clusterrolebindings -l app=scanner
+    kubectl delete clusterrole -l app=scanner
     kubectl delete rolebindings -l app=scanner --namespace $SCANNER_NAMESPACE
     kubectl delete role -l app=scanner --namespace $SCANNER_NAMESPACE
 
