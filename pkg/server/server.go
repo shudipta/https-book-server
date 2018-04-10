@@ -7,6 +7,7 @@ import (
 	hooks "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
 	admissionreview "github.com/appscode/kubernetes-webhook-util/registry/admissionreview/v1beta1"
 	"github.com/soter/scanner/pkg/controller"
+	"github.com/soter/scanner/pkg/root"
 	admission "k8s.io/api/admission/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apimachinery"
@@ -54,6 +55,8 @@ type ScannerServer struct {
 }
 
 func (op *ScannerServer) Run(stopCh <-chan struct{}) error {
+	go root.New(op.Controller).Run()
+
 	go op.Controller.RunOpsServer(stopCh)
 	return op.GenericAPIServer.PrepareRun().Run(stopCh)
 }

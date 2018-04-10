@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/golang-lru"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -125,17 +126,19 @@ func decode(resp *http.Response, err error) (layerApi, error) {
 	err = json.NewDecoder(resp.Body).Decode(&layerObj)
 	if err != nil {
 		return layerApi{}, err
+	} else if layerObj.Layer == nil {
+		return layerApi{}, fmt.Errorf("clair returned empty layerObj")
 	}
 
 	return layerObj, nil
 }
 
 // getVulnerabilities() collects vulnerabilities if exist in the layer
-func getVulnerabilities(layerObj layerApi) []*Vulnerability {
-	var vuls []*Vulnerability
+func getVulnerabilities(layerObj layerApi) []Vulnerability {
+	var vuls []Vulnerability
 	for _, feature := range layerObj.Layer.Features {
 		for _, vul := range feature.Vulnerabilities {
-			vuls = append(vuls, &vul)
+			vuls = append(vuls, vul)
 		}
 	}
 
@@ -143,11 +146,91 @@ func getVulnerabilities(layerObj layerApi) []*Vulnerability {
 }
 
 // getFeatures() collects Features in the layer
-func getFeatures(layerObj layerApi) []*Feature {
-	var fs []*Feature
+func getFeatures(layerObj layerApi) []Feature {
+	var fs []Feature
 	for _, feature := range layerObj.Layer.Features {
-		fs = append(fs, &Feature{feature.Name, feature.NamespaceName, feature.Version})
+		fs = append(fs, Feature{feature.Name, feature.NamespaceName, feature.Version})
 	}
 
 	return fs
+}
+
+// parseImageName() process a full qualified image name we used in containers
+// and returns three parts(registry, repository, tag) for this image
+func parseImageName(image string) (string, string, string) {
+	registry := "registry-1.docker.io"
+	tag := "latest"
+	var nameParts, tagParts []string
+	var name, port string
+	state := 0
+	start := 0
+	for i, c := range image {
+		if c == ':' || c == '/' || c == '@' || i == len(image)-1 {
+			if i == len(image)-1 {
+				i += 1
+			}
+			part := image[start:i]
+			start = i + 1
+			switch state {
+			case 0:
+				if strings.Contains(part, ".") {
+					registry = part
+					if c == ':' {
+						state = 1
+					} else {
+						state = 2
+					}
+				} else {
+					if c == '/' {
+						start = 0
+						state = 2
+					} else {
+						state = 3
+						name = fmt.Sprintf("library/%s", part)
+					}
+				}
+			case 3:
+				tag = ""
+				tagParts = append(tagParts, part)
+			case 1:
+				state = 2
+				port = part
+			case 2:
+				if c == ':' || c == '@' {
+					state = 3
+				}
+				nameParts = append(nameParts, part)
+			}
+		}
+	}
+
+	if port != "" {
+		registry = fmt.Sprintf("%s:%s", registry, port)
+	}
+
+	if name == "" {
+		name = strings.Join(nameParts, "/")
+	}
+
+	if tag == "" {
+		tag = strings.Join(tagParts, ":")
+	}
+
+	registry = fmt.Sprintf("https://%s", registry)
+
+	return registry, name, tag
+}
+
+func hashPart(digest string) string {
+	if len(digest) < 7 {
+		return ""
+	}
+
+	return digest[7:]
+}
+
+// cacheFeaturesAndVulnerabilities() just cache the given vulnerabilities
+func cacheFeaturesAndVulnerabilities(fsCache, vulsCache *lru.TwoQueueCache, layerName string, fs []Feature, vuls []Vulnerability) {
+	fsCache.Add(layerName, fs)
+	vulsCache.Add(layerName, vuls)
 }

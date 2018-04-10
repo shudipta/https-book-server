@@ -11,14 +11,14 @@ var _ admission.ResourceHandler = &ScannerController{}
 func (c *ScannerController) OnCreate(obj runtime.Object) (runtime.Object, error) {
 	w := obj.(*workload.Workload)
 	w.Object = nil
-	modObj, _, err := c.checkWorkload(w)
+	modObj, _, err := c.CheckWorkload(w, false)
 	return modObj, err
 }
 
 func (c *ScannerController) OnUpdate(oldObj, newObj runtime.Object) (runtime.Object, error) {
 	w := newObj.(*workload.Workload)
 	w.Object = nil
-	modObj, _, err := c.checkWorkload(w)
+	modObj, _, err := c.CheckWorkload(w, false)
 	return modObj, err
 }
 

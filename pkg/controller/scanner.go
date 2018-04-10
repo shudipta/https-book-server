@@ -9,12 +9,7 @@ import (
 	"github.com/soter/scanner/pkg/scanner"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/kubernetes/pkg/util/parsers"
 )
-
-//type AuthInfo struct {
-//	Auth map[string]RegistrySecret `json:"auth"`
-//}
 
 type RegistrySecret struct {
 	Username string `json:"username"`
@@ -23,7 +18,7 @@ type RegistrySecret struct {
 
 // getAllSecrets() takes imagePullSecrets and return the list of secret names as an array of
 // string
-func getAllSecrets(imagePullSecrets []corev1.LocalObjectReference) []string {
+func GetAllSecrets(imagePullSecrets []corev1.LocalObjectReference) []string {
 	secretNames := []string{}
 	for _, secretName := range imagePullSecrets {
 		secretNames = append(secretNames, secretName.Name)
@@ -32,25 +27,40 @@ func getAllSecrets(imagePullSecrets []corev1.LocalObjectReference) []string {
 	return secretNames
 }
 
-// checkworkload() checks vulnerabilities in the images used in containes
-func (c *ScannerController) checkWorkload(w *workload.Workload) (*workload.Workload, bool, error) {
-	secretNames := getAllSecrets(w.Spec.Template.Spec.ImagePullSecrets)
+// checkworkload() checks vulnerabilities for given workload obj
+func (c *ScannerController) CheckWorkload(w *workload.Workload, precache bool) (*workload.Workload, bool, error) {
+	secretNames := GetAllSecrets(w.Spec.Template.Spec.ImagePullSecrets)
 
-	for _, cont := range w.Spec.Template.Spec.InitContainers {
-		vulnerable, err := c.checkImage(w.ObjectMeta.GetNamespace(), cont.Image, secretNames)
-		if vulnerable {
-			return w, false, err
-		}
-
+	allow, err := c.checkContainers(w.ObjectMeta.GetNamespace(), w.Spec.Template.Spec.InitContainers, secretNames, precache)
+	if !allow {
+		return w, false, err
 	}
-	for _, cont := range w.Spec.Template.Spec.Containers {
-		vulnerable, err := c.checkImage(w.ObjectMeta.GetNamespace(), cont.Image, secretNames)
-		if vulnerable {
-			return w, false, err
-		}
+
+	allow, err = c.checkContainers(w.ObjectMeta.GetNamespace(), w.Spec.Template.Spec.Containers, secretNames, precache)
+	if !allow {
+		return w, false, err
 	}
 
 	return w, true, nil
+}
+
+// checkContainers() checks vulnerabilities for each images used in containers.
+// Here, precache parameter indicates that checking is being done for storing
+// vulnerabilities and features of each image layer into cache. Otherwise,
+// if precache is false then
+// 		if any image is vulnerable then
+//           this method returns
+func (c *ScannerController) checkContainers(
+	namespace string, containers []corev1.Container, secretNames []string,
+	precache bool) (bool, error) {
+	for _, cont := range containers {
+		vulnerable, err := c.checkImage(namespace, cont.Image, secretNames, precache)
+		if !precache && vulnerable {
+			return false, err
+		}
+	}
+
+	return true, nil
 }
 
 // This method takes namespace_name <namespace> of provided secrets <secretNames> and image name
@@ -61,15 +71,9 @@ func (c *ScannerController) checkWorkload(w *workload.Workload) (*workload.Workl
 // 			(false, nil); if no vulnerability exists
 // If the image is not found with the secret info, then it tries with the public docker
 // url="https://registry-1.docker.io/"
-func (c *ScannerController) checkImage(namespace, image string, secretNames []string) (bool, error) {
-	// TODO: check for digest
-	repoName, tag, _, err := parsers.ParseImageName(image)
-	if err != nil {
-		return true, fmt.Errorf("invalid image(%s), %v", image, err)
-	}
-
-	// Here repo has "docker.io/" as a prefix. So we drop it
-	repoName = repoName[10:]
+func (c *ScannerController) checkImage(
+	namespace, image string,
+	secretNames []string, precache bool) (bool, error) {
 
 	for _, item := range secretNames {
 		secret, err := c.KubeClient.CoreV1().Secrets(namespace).Get(item, metav1.GetOptions{})
@@ -91,7 +95,11 @@ func (c *ScannerController) checkImage(namespace, image string, secretNames []st
 
 		for _, authInfo := range auth {
 			for key, val := range authInfo {
-				vulnerable, status, err := scanner.IsVulnerable(c.KubeClient, key, repoName, tag, val.Username, val.Password)
+				vulnerable, status, err := scanner.IsVulnerable(
+					c.KubeClient, c.FsCache, c.VulsCache,
+					key, image, val.Username, val.Password,
+					precache,
+				)
 				if status > 2 {
 					return vulnerable, err
 				}
@@ -99,12 +107,17 @@ func (c *ScannerController) checkImage(namespace, image string, secretNames []st
 		}
 	}
 
-	registryUrl := "https://registry-1.docker.io/"
+	//registryUrl := "https://registry-1.docker.io/"
+	registryUrl := ""
 	username := "" // anonymous
 	password := "" // anonymous
 
-	vulnerable, status, err := scanner.IsVulnerable(c.KubeClient, registryUrl, repoName, tag, username, password)
-	if status < 3 {
+	vulnerable, status, err := scanner.IsVulnerable(
+		c.KubeClient, c.FsCache, c.VulsCache,
+		registryUrl, image, username, password,
+		precache,
+	)
+	if status < 2 {
 		return true, fmt.Errorf("error in secrets for image(%s): %v", image, err)
 	}
 
