@@ -3,7 +3,7 @@ package controller
 import (
 	"time"
 
-	hooks "github.com/appscode/kutil/admission/v1beta1"
+	hooks "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
 	"github.com/soter/scanner/pkg/eventer"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"

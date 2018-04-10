@@ -6,7 +6,7 @@ kubectl config current-context || { echo "Set a context (kubectl use-context <co
 echo ""
 
 # https://stackoverflow.com/a/677212/244009
-if [ -x "$(command -v onessl >/dev/null 2>&1)" ]; then
+if [ -x "$(command -v onessl)" ]; then
     export ONESSL=onessl
 else
     # ref: https://stackoverflow.com/a/27776822/244009
@@ -49,7 +49,7 @@ export SCANNER_SERVICE_ACCOUNT=scanner
 export SCANNER_ENABLE_RBAC=true
 export SCANNER_RUN_ON_MASTER=0
 export SCANNER_ENABLE_VALIDATING_WEBHOOK=false
-export SCANNER_DOCKER_REGISTRY=appscode
+export SCANNER_DOCKER_REGISTRY=soter
 export SCANNER_IMAGE_PULL_SECRET=
 export SCANNER_ENABLE_ANALYTICS=true
 export SCANNER_UNINSTALL=0

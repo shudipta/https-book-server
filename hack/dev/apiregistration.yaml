@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: scanner-local-apiserver
-  namespace: ${STASH_NAMESPACE}
+  namespace: ${SCANNER_NAMESPACE}
 spec:
   ports:
   - name: api
@@ -18,7 +18,7 @@ apiVersion: v1
 kind: Endpoints
 metadata:
   name: scanner-local-apiserver
-  namespace: ${STASH_NAMESPACE}
+  namespace: ${SCANNER_NAMESPACE}
 subsets:
 - addresses:
   # list all external ips for this service
@@ -42,5 +42,5 @@ spec:
   versionPriority: 15
   service:
     name: scanner-local-apiserver
-    namespace: ${STASH_NAMESPACE}
+    namespace: ${SCANNER_NAMESPACE}
   version: v1alpha1

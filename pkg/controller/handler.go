@@ -1,8 +1,8 @@
 package controller
 
 import (
-	"github.com/appscode/kutil/admission"
-	workload "github.com/appscode/kutil/workload/v1"
+	"github.com/appscode/kubernetes-webhook-util/admission"
+	workload "github.com/appscode/kubernetes-webhook-util/workload/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
