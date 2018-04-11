@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	workload "github.com/appscode/kubernetes-webhook-util/workload/v1"
+	api "github.com/soter/scanner/apis/scanner/v1alpha1"
 	"github.com/soter/scanner/pkg/scanner"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -139,16 +140,16 @@ func (c *ScannerController) CheckImage(
 	return imageManifest, status, err
 }
 
-type Feature map[scanner.Feature]struct{}
-type Vulnerability map[scanner.Vulnerability]struct{}
+type Feature map[api.Feature]struct{}
+type Vulnerability map[api.Vulnerability]struct{}
 
-func (c *ScannerController) GetImageReview(imageManifest scanner.Canonical1) ([]scanner.Feature, []scanner.Vulnerability) {
+func (c *ScannerController) GetImageReview(imageManifest scanner.Canonical1) ([]api.Feature, []api.Vulnerability) {
 	var (
-		fs        []scanner.Feature
+		fs        []api.Feature
 		fsNameSet = sets.NewString()
 		fsSet     = Feature{}
 
-		vuls        []scanner.Vulnerability
+		vuls        []api.Vulnerability
 		vulsNameSet = sets.NewString()
 		vulsSet     = Vulnerability{}
 	)
@@ -157,7 +158,7 @@ func (c *ScannerController) GetImageReview(imageManifest scanner.Canonical1) ([]
 		key := scanner.HashPart(imageManifest.Config.Digest) + scanner.HashPart(layer.Digest)
 
 		valF, _ := c.FsCache.Get(key)
-		fs1 := valF.([]scanner.Feature)
+		fs1 := valF.([]api.Feature)
 		if len(fs1) > 0 {
 			for _, f := range fs1 {
 				name := f.Name + f.NamespaceName + f.Version
@@ -169,7 +170,7 @@ func (c *ScannerController) GetImageReview(imageManifest scanner.Canonical1) ([]
 		}
 
 		valV, _ := c.VulsCache.Get(key)
-		vuls1 := valV.([]scanner.Vulnerability)
+		vuls1 := valV.([]api.Vulnerability)
 		if len(vuls1) > 0 {
 			for _, v := range vuls1 {
 				name := v.Name + v.NamespaceName

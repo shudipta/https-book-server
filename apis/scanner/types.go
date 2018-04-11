@@ -3,7 +3,6 @@ package scanner
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	core "k8s.io/api/core/v1"
-	"github.com/soter/scanner/pkg/scanner"
 )
 
 type ImageReviewRequest struct {
@@ -14,12 +13,30 @@ type ImageReviewRequest struct {
 	ImagePullSecrets []core.LocalObjectReference
 }
 
+type Vulnerability struct {
+	Name          string
+	NamespaceName string
+	Description   string
+	Link          string
+	Severity      string
+	//Metadata      map[string]interface{} `json:"Metadata,omitempty"`
+	FixedBy string
+	//FixedIn     []Feature `json:"FixedIn,omitempty"`
+	FeatureName string
+}
+
+type Feature struct {
+	Name          string
+	NamespaceName string
+	Version       string
+}
+
 type ImageReviewResponse struct {
 	// +optional
-	Features []scanner.Feature
+	Features []Feature
 
 	// +optional
-	Vulnerabilities []scanner.Vulnerability
+	Vulnerabilities []Vulnerability
 }
 
 // +genclient

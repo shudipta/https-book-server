@@ -1,0 +1,669 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "soter-scanner",
+    "contact": {
+      "name": "AppsCode Inc.",
+      "url": "https://appscode.com",
+      "email": "hello@appscode.com"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
+    },
+    "version": "v0"
+  },
+  "paths": {
+    "/apis/": {
+      "get": {
+        "description": "get available API versions",
+        "consumes": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "apis"
+        ],
+        "operationId": "getAPIVersions",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.APIGroupList"
+            }
+          }
+        }
+      }
+    },
+    "/apis/scanner.soter.cloud/": {
+      "get": {
+        "description": "get information of a group",
+        "consumes": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "scannerSoterCloud"
+        ],
+        "operationId": "getScannerSoterCloudAPIGroup",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.APIGroup"
+            }
+          }
+        }
+      }
+    },
+    "/apis/scanner.soter.cloud/v1alpha1/": {
+      "get": {
+        "description": "get available resources",
+        "consumes": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "scannerSoterCloud_v1alpha1"
+        ],
+        "operationId": "getScannerSoterCloudV1alpha1APIResources",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.APIResourceList"
+            }
+          }
+        }
+      }
+    },
+    "/apis/scanner.soter.cloud/v1alpha1/namespaces/{namespace}/imagereviews": {
+      "post": {
+        "description": "create an ImageReview",
+        "consumes": [
+          "*/*"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "scannerSoterCloud_v1alpha1"
+        ],
+        "operationId": "createScannerSoterCloudV1alpha1NamespacedImageReview",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/com.github.soter.scanner.apis.scanner.v1alpha1.ImageReview"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/com.github.soter.scanner.apis.scanner.v1alpha1.ImageReview"
+            }
+          },
+          "201": {
+            "description": "Created",
+            "schema": {
+              "$ref": "#/definitions/com.github.soter.scanner.apis.scanner.v1alpha1.ImageReview"
+            }
+          },
+          "202": {
+            "description": "Accepted",
+            "schema": {
+              "$ref": "#/definitions/com.github.soter.scanner.apis.scanner.v1alpha1.ImageReview"
+            }
+          }
+        },
+        "x-kubernetes-action": "post",
+        "x-kubernetes-group-version-kind": {
+          "group": "scanner.soter.cloud",
+          "version": "v1alpha1",
+          "kind": "ImageReview"
+        }
+      },
+      "parameters": [
+        {
+          "uniqueItems": true,
+          "type": "string",
+          "description": "object name and auth scope, such as for teams and projects",
+          "name": "namespace",
+          "in": "path",
+          "required": true
+        },
+        {
+          "uniqueItems": true,
+          "type": "string",
+          "description": "If 'true', then the output is pretty printed.",
+          "name": "pretty",
+          "in": "query"
+        }
+      ]
+    },
+    "/apis/scanner.soter.cloud/v1alpha1/namespaces/{namespace}/imagereviews/{name}": {
+      "delete": {
+        "description": "delete an ImageReview",
+        "consumes": [
+          "*/*"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "scannerSoterCloud_v1alpha1"
+        ],
+        "operationId": "deleteScannerSoterCloudV1alpha1NamespacedImageReview",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Status"
+            }
+          }
+        },
+        "x-kubernetes-action": "delete",
+        "x-kubernetes-group-version-kind": {
+          "group": "scanner.soter.cloud",
+          "version": "v1alpha1",
+          "kind": "ImageReview"
+        }
+      },
+      "parameters": [
+        {
+          "uniqueItems": true,
+          "type": "string",
+          "description": "name of the ImageReview",
+          "name": "name",
+          "in": "path",
+          "required": true
+        },
+        {
+          "uniqueItems": true,
+          "type": "string",
+          "description": "object name and auth scope, such as for teams and projects",
+          "name": "namespace",
+          "in": "path",
+          "required": true
+        },
+        {
+          "uniqueItems": true,
+          "type": "string",
+          "description": "If 'true', then the output is pretty printed.",
+          "name": "pretty",
+          "in": "query"
+        }
+      ]
+    }
+  },
+  "definitions": {
+    "com.github.soter.scanner.apis.scanner.v1alpha1.Feature": {
+      "properties": {
+        "Name": {
+          "type": "string"
+        },
+        "NamespaceName": {
+          "type": "string"
+        },
+        "Version": {
+          "type": "string"
+        }
+      }
+    },
+    "com.github.soter.scanner.apis.scanner.v1alpha1.ImageReview": {
+      "description": "ImageReview describes a peer ping request/response.",
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "request": {
+          "$ref": "#/definitions/com.github.soter.scanner.apis.scanner.v1alpha1.ImageReviewRequest"
+        },
+        "response": {
+          "$ref": "#/definitions/com.github.soter.scanner.apis.scanner.v1alpha1.ImageReviewResponse"
+        }
+      },
+      "x-kubernetes-group-version-kind": [
+        {
+          "group": "scanner.soter.cloud",
+          "version": "v1alpha1",
+          "kind": "ImageReview"
+        }
+      ]
+    },
+    "com.github.soter.scanner.apis.scanner.v1alpha1.ImageReviewRequest": {
+      "properties": {
+        "image": {
+          "description": "Docker image name. More info: https://kubernetes.io/docs/concepts/containers/images This field is optional to allow higher level config management to default or override container images in workload controllers like Deployments and StatefulSets.",
+          "type": "string"
+        },
+        "imagePullSecrets": {
+          "description": "ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec. If specified, these secrets will be passed to individual puller implementations for them to use. For example, in the case of docker, only DockerConfig type secrets are honored. More info: https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/io.k8s.api.core.v1.LocalObjectReference"
+          },
+          "x-kubernetes-patch-merge-key": "name",
+          "x-kubernetes-patch-strategy": "merge"
+        }
+      }
+    },
+    "com.github.soter.scanner.apis.scanner.v1alpha1.ImageReviewResponse": {
+      "properties": {
+        "features": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/com.github.soter.scanner.apis.scanner.v1alpha1.Feature"
+          }
+        },
+        "vulnerabilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/com.github.soter.scanner.apis.scanner.v1alpha1.Vulnerability"
+          }
+        }
+      }
+    },
+    "com.github.soter.scanner.apis.scanner.v1alpha1.Vulnerability": {
+      "description": "Vulnerability represents vulnerability entity returned by Clair",
+      "required": [
+        "featureName"
+      ],
+      "properties": {
+        "Description": {
+          "type": "string"
+        },
+        "FixedBy": {
+          "description": "Metadata      map[string]interface{} `json:\"Metadata,omitempty\"`",
+          "type": "string"
+        },
+        "Link": {
+          "type": "string"
+        },
+        "Name": {
+          "type": "string"
+        },
+        "NamespaceName": {
+          "type": "string"
+        },
+        "Severity": {
+          "type": "string"
+        },
+        "featureName": {
+          "description": "FixedIn     []Feature `json:\"FixedIn,omitempty\"`",
+          "type": "string"
+        }
+      }
+    },
+    "io.k8s.api.core.v1.LocalObjectReference": {
+      "description": "LocalObjectReference contains enough information to let you locate the referenced object inside the same namespace.",
+      "properties": {
+        "name": {
+          "description": "Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names",
+          "type": "string"
+        }
+      }
+    },
+    "io.k8s.apimachinery.pkg.apis.meta.v1.APIGroup": {
+      "description": "APIGroup contains the name, the supported versions, and the preferred version of a group.",
+      "required": [
+        "name",
+        "versions",
+        "serverAddressByClientCIDRs"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "name": {
+          "description": "name is the name of the group.",
+          "type": "string"
+        },
+        "preferredVersion": {
+          "description": "preferredVersion is the version preferred by the API server, which probably is the storage version.",
+          "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.GroupVersionForDiscovery"
+        },
+        "serverAddressByClientCIDRs": {
+          "description": "a map of client CIDR to server address that is serving this group. This is to help clients reach servers in the most network-efficient way possible. Clients can use the appropriate server address as per the CIDR that they match. In case of multiple matches, clients should use the longest matching CIDR. The server returns only those CIDRs that it thinks that the client can match. For example: the master will return an internal IP CIDR only, if the client reaches the server using an internal IP. Server looks at X-Forwarded-For header or X-Real-Ip header or request.RemoteAddr (in that order) to get the client IP.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ServerAddressByClientCIDR"
+          }
+        },
+        "versions": {
+          "description": "versions are the versions supported in this group.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.GroupVersionForDiscovery"
+          }
+        }
+      },
+      "x-kubernetes-group-version-kind": [
+        {
+          "group": "",
+          "version": "v1",
+          "kind": "APIGroup"
+        }
+      ]
+    },
+    "io.k8s.apimachinery.pkg.apis.meta.v1.APIGroupList": {
+      "description": "APIGroupList is a list of APIGroup, to allow clients to discover the API at /apis.",
+      "required": [
+        "groups"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+          "type": "string"
+        },
+        "groups": {
+          "description": "groups is a list of APIGroup.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.APIGroup"
+          }
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+          "type": "string"
+        }
+      },
+      "x-kubernetes-group-version-kind": [
+        {
+          "group": "",
+          "version": "v1",
+          "kind": "APIGroupList"
+        }
+      ]
+    },
+    "io.k8s.apimachinery.pkg.apis.meta.v1.APIResource": {
+      "description": "APIResource specifies the name of a resource and whether it is namespaced.",
+      "required": [
+        "name",
+        "singularName",
+        "namespaced",
+        "kind",
+        "verbs"
+      ],
+      "properties": {
+        "categories": {
+          "description": "categories is a list of the grouped resources this resource belongs to (e.g. 'all')",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "group": {
+          "description": "group is the preferred group of the resource.  Empty implies the group of the containing resource list. For subresources, this may have a different value, for example: Scale\".",
+          "type": "string"
+        },
+        "kind": {
+          "description": "kind is the kind for the resource (e.g. 'Foo' is the kind for a resource 'foo')",
+          "type": "string"
+        },
+        "name": {
+          "description": "name is the plural name of the resource.",
+          "type": "string"
+        },
+        "namespaced": {
+          "description": "namespaced indicates if a resource is namespaced or not.",
+          "type": "boolean"
+        },
+        "shortNames": {
+          "description": "shortNames is a list of suggested short names of the resource.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "singularName": {
+          "description": "singularName is the singular name of the resource.  This allows clients to handle plural and singular opaquely. The singularName is more correct for reporting status on a single item and both singular and plural are allowed from the kubectl CLI interface.",
+          "type": "string"
+        },
+        "verbs": {
+          "description": "verbs is a list of supported kube verbs (this includes get, list, watch, create, update, patch, delete, deletecollection, and proxy)",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "version": {
+          "description": "version is the preferred version of the resource.  Empty implies the version of the containing resource list For subresources, this may have a different value, for example: v1 (while inside a v1beta1 version of the core resource's group)\".",
+          "type": "string"
+        }
+      }
+    },
+    "io.k8s.apimachinery.pkg.apis.meta.v1.APIResourceList": {
+      "description": "APIResourceList is a list of APIResource, it is used to expose the name of the resources supported in a specific group and version, and if the resource is namespaced.",
+      "required": [
+        "groupVersion",
+        "resources"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+          "type": "string"
+        },
+        "groupVersion": {
+          "description": "groupVersion is the group and version this APIResourceList is for.",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "resources": {
+          "description": "resources contains the name of the resources and if they are namespaced.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.APIResource"
+          }
+        }
+      },
+      "x-kubernetes-group-version-kind": [
+        {
+          "group": "",
+          "version": "v1",
+          "kind": "APIResourceList"
+        }
+      ]
+    },
+    "io.k8s.apimachinery.pkg.apis.meta.v1.GroupVersionForDiscovery": {
+      "description": "GroupVersion contains the \"group/version\" and \"version\" string of a version. It is made a struct to keep extensibility.",
+      "required": [
+        "groupVersion",
+        "version"
+      ],
+      "properties": {
+        "groupVersion": {
+          "description": "groupVersion specifies the API group and version in the form \"group/version\"",
+          "type": "string"
+        },
+        "version": {
+          "description": "version specifies the version in the form of \"version\". This is to save the clients the trouble of splitting the GroupVersion.",
+          "type": "string"
+        }
+      }
+    },
+    "io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta": {
+      "description": "ListMeta describes metadata that synthetic resources must have, including lists and various status objects. A resource may have only one of {ObjectMeta, ListMeta}.",
+      "properties": {
+        "continue": {
+          "description": "continue may be set if the user set a limit on the number of items returned, and indicates that the server has more data available. The value is opaque and may be used to issue another request to the endpoint that served this list to retrieve the next set of available objects. Continuing a list may not be possible if the server configuration has changed or more than a few minutes have passed. The resourceVersion field returned when using this continue value will be identical to the value in the first response.",
+          "type": "string"
+        },
+        "resourceVersion": {
+          "description": "String that identifies the server's internal version of this object that can be used by clients to determine when objects have changed. Value must be treated as opaque by clients and passed unmodified back to the server. Populated by the system. Read-only. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#concurrency-control-and-consistency",
+          "type": "string"
+        },
+        "selfLink": {
+          "description": "selfLink is a URL representing this object. Populated by the system. Read-only.",
+          "type": "string"
+        }
+      }
+    },
+    "io.k8s.apimachinery.pkg.apis.meta.v1.ServerAddressByClientCIDR": {
+      "description": "ServerAddressByClientCIDR helps the client to determine the server address that they should use, depending on the clientCIDR that they match.",
+      "required": [
+        "clientCIDR",
+        "serverAddress"
+      ],
+      "properties": {
+        "clientCIDR": {
+          "description": "The CIDR with which clients can match their IP to figure out the server address that they should use.",
+          "type": "string"
+        },
+        "serverAddress": {
+          "description": "Address of this server, suitable for a client that matches the above CIDR. This can be a hostname, hostname:port, IP or IP:port.",
+          "type": "string"
+        }
+      }
+    },
+    "io.k8s.apimachinery.pkg.apis.meta.v1.Status": {
+      "description": "Status is a return value for calls that don't return other objects.",
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+          "type": "string"
+        },
+        "code": {
+          "description": "Suggested HTTP return code for this status, 0 if not set.",
+          "type": "integer",
+          "format": "int32"
+        },
+        "details": {
+          "description": "Extended data associated with the reason.  Each reason may define its own extended details. This field is optional and the data returned is not guaranteed to conform to any schema except that defined by the reason type.",
+          "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.StatusDetails"
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "message": {
+          "description": "A human-readable description of the status of this operation.",
+          "type": "string"
+        },
+        "metadata": {
+          "description": "Standard list metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+          "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta"
+        },
+        "reason": {
+          "description": "A machine-readable description of why this operation is in the \"Failure\" status. If this value is empty there is no information available. A Reason clarifies an HTTP status code but does not override it.",
+          "type": "string"
+        },
+        "status": {
+          "description": "Status of the operation. One of: \"Success\" or \"Failure\". More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status",
+          "type": "string"
+        }
+      },
+      "x-kubernetes-group-version-kind": [
+        {
+          "group": "",
+          "version": "v1",
+          "kind": "Status"
+        }
+      ]
+    },
+    "io.k8s.apimachinery.pkg.apis.meta.v1.StatusCause": {
+      "description": "StatusCause provides more information about an api.Status failure, including cases when multiple errors are encountered.",
+      "properties": {
+        "field": {
+          "description": "The field of the resource that has caused this error, as named by its JSON serialization. May include dot and postfix notation for nested attributes. Arrays are zero-indexed.  Fields may appear more than once in an array of causes due to fields having multiple errors. Optional.\n\nExamples:\n  \"name\" - the field \"name\" on the current resource\n  \"items[0].name\" - the field \"name\" on the first array entry in \"items\"",
+          "type": "string"
+        },
+        "message": {
+          "description": "A human-readable description of the cause of the error.  This field may be presented as-is to a reader.",
+          "type": "string"
+        },
+        "reason": {
+          "description": "A machine-readable description of the cause of the error. If this value is empty there is no information available.",
+          "type": "string"
+        }
+      }
+    },
+    "io.k8s.apimachinery.pkg.apis.meta.v1.StatusDetails": {
+      "description": "StatusDetails is a set of additional properties that MAY be set by the server to provide additional information about a response. The Reason field of a Status object defines what attributes will be set. Clients must ignore fields that do not match the defined type of each attribute, and should assume that any attribute may be empty, invalid, or under defined.",
+      "properties": {
+        "causes": {
+          "description": "The Causes array includes more details associated with the StatusReason failure. Not all StatusReasons may provide detailed causes.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.StatusCause"
+          }
+        },
+        "group": {
+          "description": "The group attribute of the resource associated with the status StatusReason.",
+          "type": "string"
+        },
+        "kind": {
+          "description": "The kind attribute of the resource associated with the status StatusReason. On some operations may differ from the requested resource Kind. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "name": {
+          "description": "The name attribute of the resource associated with the status StatusReason (when there is a single name which can be described).",
+          "type": "string"
+        },
+        "retryAfterSeconds": {
+          "description": "If specified, the time in seconds before the operation should be retried. Some errors may indicate the client must take an alternate action - for those errors this field may indicate how long to wait before taking the alternate action.",
+          "type": "integer",
+          "format": "int32"
+        },
+        "uid": {
+          "description": "UID of the resource. (when there is a single resource which can be described). More info: http://kubernetes.io/docs/user-guide/identifiers#uids",
+          "type": "string"
+        }
+      }
+    }
+  }
+}

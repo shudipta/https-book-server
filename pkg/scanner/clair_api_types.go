@@ -1,5 +1,9 @@
 package scanner
 
+import (
+	api "github.com/soter/scanner/apis/scanner/v1alpha1"
+)
+
 type LayerType struct {
 	Name       string
 	Path       string
@@ -14,28 +18,9 @@ type HeadersType struct {
 }
 
 type feature struct {
-	Name            string          `json:"Name,omitempty"`
-	NamespaceName   string          `json:"NamespaceName,omitempty"`
-	Version         string          `json:"Version,omitempty"`
-	Vulnerabilities []Vulnerability `json:"Vulnerabilities"`
-	AddedBy         string          `json:"AddedBy,omitempty"`
-}
-
-// Vulnerability represents vulnerability entity returned by Clair
-type Vulnerability struct {
-	Name          string `json:"Name,omitempty"`
-	NamespaceName string `json:"NamespaceName,omitempty"`
-	Description   string `json:"Description,omitempty"`
-	Link          string `json:"Link,omitempty"`
-	Severity      string `json:"Severity,omitempty"`
-	//Metadata      map[string]interface{} `json:"Metadata,omitempty"`
-	FixedBy string `json:"FixedBy,omitempty"`
-	//FixedIn     []Feature `json:"FixedIn,omitempty"`
-	FeatureName string `json:"featureName",omitempty`
-}
-
-type Feature struct {
-	Name          string `json:"Name,omitempty"`
-	NamespaceName string `json:"NamespaceName,omitempty"`
-	Version       string `json:"Version,omitempty"`
+	Name            string              `json:"Name,omitempty"`
+	NamespaceName   string              `json:"NamespaceName,omitempty"`
+	Version         string              `json:"Version,omitempty"`
+	Vulnerabilities []api.Vulnerability `json:"Vulnerabilities"`
+	AddedBy         string              `json:"AddedBy,omitempty"`
 }

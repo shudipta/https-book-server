@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/golang-lru"
+	api "github.com/soter/scanner/apis/scanner/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -134,8 +135,8 @@ func decode(resp *http.Response, err error) (layerApi, error) {
 }
 
 // getVulnerabilities() collects vulnerabilities if exist in the layer
-func getVulnerabilities(layerObj layerApi) []Vulnerability {
-	vuls := []Vulnerability{}
+func getVulnerabilities(layerObj layerApi) []api.Vulnerability {
+	var vuls []api.Vulnerability
 	for _, feature := range layerObj.Layer.Features {
 		for _, vul := range feature.Vulnerabilities {
 			vuls = append(vuls, vul)
@@ -146,10 +147,10 @@ func getVulnerabilities(layerObj layerApi) []Vulnerability {
 }
 
 // getFeatures() collects Features in the layer
-func getFeatures(layerObj layerApi) []Feature {
-	fs := []Feature{}
+func getFeatures(layerObj layerApi) []api.Feature {
+	var fs []api.Feature
 	for _, feature := range layerObj.Layer.Features {
-		fs = append(fs, Feature{feature.Name, feature.NamespaceName, feature.Version})
+		fs = append(fs, api.Feature{feature.Name, feature.NamespaceName, feature.Version})
 	}
 
 	return fs
@@ -230,7 +231,7 @@ func HashPart(digest string) string {
 }
 
 // cacheFeaturesAndVulnerabilities() just cache the given vulnerabilities
-func cacheFeaturesAndVulnerabilities(fsCache, vulsCache *lru.TwoQueueCache, layerName string, fs []Feature, vuls []Vulnerability) {
+func cacheFeaturesAndVulnerabilities(fsCache, vulsCache *lru.TwoQueueCache, layerName string, fs []api.Feature, vuls []api.Vulnerability) {
 	fsCache.Add(layerName, fs)
 	vulsCache.Add(layerName, vuls)
 }

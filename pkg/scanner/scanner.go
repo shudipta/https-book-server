@@ -10,6 +10,7 @@ import (
 
 	"github.com/hashicorp/golang-lru"
 	reg "github.com/heroku/docker-registry-client/registry"
+	api "github.com/soter/scanner/apis/scanner/v1alpha1"
 	"github.com/tamalsaha/go-oneliners"
 	"k8s.io/client-go/kubernetes"
 )
@@ -156,12 +157,12 @@ func IsVulnerable(
 		lName := HashPart(imageManifest.Config.Digest) + HashPart(imageManifest.Layers[i].Digest)
 
 		var (
-			fs   = []Feature{}
-			vuls = []Vulnerability{}
+			fs   = []api.Feature{}
+			vuls = []api.Vulnerability{}
 		)
 
 		if val, exists := vulsCache.Get(lName); exists {
-			vuls = val.([]Vulnerability)
+			vuls = val.([]api.Vulnerability)
 		} else {
 			l := &LayerType{
 				Name: lName,

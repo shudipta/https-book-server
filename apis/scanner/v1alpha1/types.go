@@ -3,7 +3,6 @@ package v1alpha1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	core "k8s.io/api/core/v1"
-	"github.com/soter/scanner/pkg/scanner"
 )
 
 type ImageReviewRequest struct {
@@ -24,12 +23,31 @@ type ImageReviewRequest struct {
 	ImagePullSecrets []core.LocalObjectReference `json:"imagePullSecrets,omitempty" patchStrategy:"merge" patchMergeKey:"name"`
 }
 
+// Vulnerability represents vulnerability entity returned by Clair
+type Vulnerability struct {
+	Name          string `json:"Name,omitempty"`
+	NamespaceName string `json:"NamespaceName,omitempty"`
+	Description   string `json:"Description,omitempty"`
+	Link          string `json:"Link,omitempty"`
+	Severity      string `json:"Severity,omitempty"`
+	//Metadata      map[string]interface{} `json:"Metadata,omitempty"`
+	FixedBy string `json:"FixedBy,omitempty"`
+	//FixedIn     []Feature `json:"FixedIn,omitempty"`
+	FeatureName string `json:"featureName",omitempty`
+}
+
+type Feature struct {
+	Name          string `json:"Name,omitempty"`
+	NamespaceName string `json:"NamespaceName,omitempty"`
+	Version       string `json:"Version,omitempty"`
+}
+
 type ImageReviewResponse struct {
 	// +optional
-	Features []scanner.Feature `json:"features,omitempty"`
+	Features []Feature `json:"features,omitempty"`
 
 	// +optional
-	Vulnerabilities []scanner.Vulnerability `json:"vulnerabilities,omitempty"`
+	Vulnerabilities []Vulnerability `json:"vulnerabilities,omitempty"`
 }
 
 const (
