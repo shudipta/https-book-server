@@ -7,10 +7,10 @@ import (
 	logs "github.com/appscode/go/log/golog"
 	"github.com/appscode/kutil/meta"
 	"github.com/appscode/kutil/tools/clientcmd"
-	"github.com/soter/scanner/test/framework"
 	. "github.com/onsi/ginkgo"
 	"github.com/onsi/ginkgo/reporters"
 	. "github.com/onsi/gomega"
+	"github.com/soter/scanner/test/framework"
 	"k8s.io/client-go/kubernetes"
 	ka "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 )
@@ -47,7 +47,7 @@ var _ = BeforeSuite(func() {
 	By("Using test namespace " + root.Namespace())
 
 	go root.StartAPIServerAndOperator(options.KubeConfig, options.ControllerOptions)
-	root.EventuallyAPIServerReady("v1alpha1.scanner.soter.cloud").Should(Succeed())
+	root.EventuallyAPIServerReady("v1alpha1.admission.scanner.soter.cloud").Should(Succeed())
 	// let's API server be warmed up
 	time.Sleep(time.Second * 5)
 })
@@ -55,10 +55,10 @@ var _ = BeforeSuite(func() {
 var _ = AfterSuite(func() {
 	if options.StartAPIServer {
 		By("Cleaning API server and Webhook stuff")
-		root.KubeClient.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Delete("scanner.soter.cloud", meta.DeleteInBackground())
+		root.KubeClient.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Delete("admission.scanner.soter.cloud", meta.DeleteInBackground())
 		root.KubeClient.CoreV1().Endpoints(root.Namespace()).Delete("scanner-local-apiserver", meta.DeleteInBackground())
 		root.KubeClient.CoreV1().Services(root.Namespace()).Delete("scanner-local-apiserver", meta.DeleteInBackground())
-		root.KAClient.ApiregistrationV1beta1().APIServices().Delete("v1alpha1.scanner.soter.cloud", meta.DeleteInBackground())
+		root.KAClient.ApiregistrationV1beta1().APIServices().Delete("v1alpha1.admission.scanner.soter.cloud", meta.DeleteInBackground())
 	}
 	root.DeleteNamespace()
 })

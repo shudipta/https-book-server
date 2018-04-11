@@ -17,8 +17,9 @@ type ScannerController struct {
 	KubeClient kubernetes.Interface
 	recorder   record.EventRecorder
 
-	FsCache   *lru.TwoQueueCache
-	VulsCache *lru.TwoQueueCache
+	LayerCache *lru.TwoQueueCache
+	FsCache    *lru.TwoQueueCache
+	VulsCache  *lru.TwoQueueCache
 }
 
 func (c *ScannerController) RunOpsServer(stopCh <-chan struct{}) error {

@@ -35,6 +35,10 @@ func NewControllerConfig(clientConfig *rest.Config) *ControllerConfig {
 }
 
 func (c *ControllerConfig) New() (*ScannerController, error) {
+	layerCache, err := lru.New2Q(128)
+	if err != nil {
+		return nil, err
+	}
 	fsCache, err := lru.New2Q(128)
 	if err != nil {
 		return nil, err
@@ -45,11 +49,14 @@ func (c *ControllerConfig) New() (*ScannerController, error) {
 	}
 
 	ctrl := &ScannerController{
-		Config:     c.Config,
+		Config: c.Config,
+
 		KubeClient: c.KubeClient,
+		LayerCache: layerCache,
 		FsCache:    fsCache,
 		VulsCache:  vulsCache,
-		recorder:   eventer.NewEventRecorder(c.KubeClient, "soter-scanner"),
+
+		recorder: eventer.NewEventRecorder(c.KubeClient, "soter-scanner"),
 	}
 	return ctrl, nil
 }

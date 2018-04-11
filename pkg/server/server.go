@@ -6,11 +6,17 @@ import (
 
 	hooks "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
 	admissionreview "github.com/appscode/kubernetes-webhook-util/registry/admissionreview/v1beta1"
+	"github.com/soter/scanner/apis/scanner"
+	"github.com/soter/scanner/apis/scanner/install"
+	"github.com/soter/scanner/apis/scanner/v1alpha1"
 	"github.com/soter/scanner/pkg/controller"
+	irregistry "github.com/soter/scanner/pkg/registry/scanner/imagereview"
 	"github.com/soter/scanner/pkg/root"
 	admission "k8s.io/api/admission/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apimachinery"
+	"k8s.io/apimachinery/pkg/apimachinery/announced"
+	"k8s.io/apimachinery/pkg/apimachinery/registered"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -21,11 +27,14 @@ import (
 )
 
 var (
-	Scheme = runtime.NewScheme()
-	Codecs = serializer.NewCodecFactory(Scheme)
+	groupFactoryRegistry = make(announced.APIGroupFactoryRegistry)
+	registry             = registered.NewOrDie("")
+	Scheme               = runtime.NewScheme()
+	Codecs               = serializer.NewCodecFactory(Scheme)
 )
 
 func init() {
+	install.Install(groupFactoryRegistry, registry, Scheme)
 	admission.AddToScheme(Scheme)
 
 	// we need to add the options to empty v1
@@ -185,6 +194,18 @@ func (c completedConfig) New() (*ScannerServer, error) {
 				return admissionHook.Initialize(c.ControllerConfig.ClientConfig, context.StopCh)
 			},
 		)
+	}
+
+	{
+		apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(scanner.GroupName, registry, Scheme, metav1.ParameterCodec, Codecs)
+		apiGroupInfo.GroupMeta.GroupVersion = v1alpha1.SchemeGroupVersion
+		v1alpha1storage := map[string]rest.Storage{}
+		v1alpha1storage[v1alpha1.ResourcePluralImageReview] = irregistry.NewREST(c.ControllerConfig.ClientConfig, s.Controller)
+		apiGroupInfo.VersionedResourcesStorageMap["v1alpha1"] = v1alpha1storage
+
+		if err := s.GenericAPIServer.InstallAPIGroup(&apiGroupInfo); err != nil {
+			return nil, err
+		}
 	}
 
 	return s, nil

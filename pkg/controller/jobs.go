@@ -9,7 +9,7 @@ import (
 func (c *ScannerController) NewJobWebhook() hooks.AdmissionHook {
 	return workload.NewWorkloadWebhook(
 		schema.GroupVersionResource{
-			Group:    "scanner.soter.cloud",
+			Group:    "admission.scanner.soter.cloud",
 			Version:  "v1alpha1",
 			Resource: "jobs",
 		},

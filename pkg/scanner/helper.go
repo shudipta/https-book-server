@@ -135,7 +135,7 @@ func decode(resp *http.Response, err error) (layerApi, error) {
 
 // getVulnerabilities() collects vulnerabilities if exist in the layer
 func getVulnerabilities(layerObj layerApi) []Vulnerability {
-	var vuls []Vulnerability
+	vuls := []Vulnerability{}
 	for _, feature := range layerObj.Layer.Features {
 		for _, vul := range feature.Vulnerabilities {
 			vuls = append(vuls, vul)
@@ -147,7 +147,7 @@ func getVulnerabilities(layerObj layerApi) []Vulnerability {
 
 // getFeatures() collects Features in the layer
 func getFeatures(layerObj layerApi) []Feature {
-	var fs []Feature
+	fs := []Feature{}
 	for _, feature := range layerObj.Layer.Features {
 		fs = append(fs, Feature{feature.Name, feature.NamespaceName, feature.Version})
 	}
@@ -221,7 +221,7 @@ func parseImageName(image string) (string, string, string) {
 	return registry, name, tag
 }
 
-func hashPart(digest string) string {
+func HashPart(digest string) string {
 	if len(digest) < 7 {
 		return ""
 	}
