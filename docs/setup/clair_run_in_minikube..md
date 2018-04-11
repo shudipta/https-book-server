@@ -10,7 +10,7 @@ These should be available in `docs/examples/clair` directory.
 Then we need to run the following commands from the repository root,
 
 ```console
-kubectl create secret generic clairsecret --from-file=docs/examples/clair/clair-config.yaml
+kubectl create secret generic clairsecret --from-file=docs/examples/clair/config.yaml
 
 kubectl create -f docs/examples/clair/clair-kubernetes.yaml
 ```

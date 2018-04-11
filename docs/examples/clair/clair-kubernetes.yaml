@@ -29,10 +29,6 @@ spec:
       labels:
         app: clair
     spec:
-      volumes:
-      - name: secret-volume
-        secret:
-          secretName: clairsecret
       containers:
       - name: clair
         image: quay.io/coreos/clair:v2.0.0
@@ -45,6 +41,10 @@ spec:
         volumeMounts:
         - mountPath: /config
           name: secret-volume
+      volumes:
+      - name: secret-volume
+        secret:
+          secretName: clairsecret
 ---
 apiVersion: v1
 kind: ReplicationController
