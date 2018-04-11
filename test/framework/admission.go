@@ -8,7 +8,7 @@ import (
 	"time"
 
 	shell "github.com/codeskyblue/go-sh"
-	srvr "github.com/soter/scanner/pkg/commands/server"
+	srvr "github.com/soter/scanner/pkg/cmds/server"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -29,7 +29,7 @@ spec:
         - --tls-cert-file=/var/serving-cert/tls.crt
         - --tls-private-key-file=/var/serving-cert/tls.key
         - --enable-analytics=${SCANNER_ENABLE_ANALYTICS}
-        image: ${SCANNER_DOCKER_REGISTRY}/scanner:img-review
+        image: ${SCANNER_DOCKER_REGISTRY}/scanner:cache
         ports:
         - containerPort: 8443
         - containerPort: 56790
@@ -81,23 +81,6 @@ spec:
     targetPort: 56790
   selector:
     app: scanner
----
-# register as aggregated apiserver
-apiVersion: apiregistration.k8s.io/v1beta1
-kind: APIService
-metadata:
-  name: v1alpha1.admission.scanner.soter.cloud
-  labels:
-    app: scanner
-spec:
-  caBundle: ${SERVICE_SERVING_CERT_CA}
-  group: admission.scanner.soter.cloud
-  groupPriorityMinimum: 1000
-  versionPriority: 15
-  service:
-    name: scanner
-    namespace: ${SCANNER_NAMESPACE}
-  version: v1alpha1
 ---
 # register as aggregated apiserver
 apiVersion: apiregistration.k8s.io/v1beta1

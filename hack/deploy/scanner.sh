@@ -54,6 +54,12 @@ export SCANNER_IMAGE_PULL_SECRET=
 export SCANNER_ENABLE_ANALYTICS=true
 export SCANNER_UNINSTALL=0
 
+export APPSCODE_ENV=${APPSCODE_ENV:-prod}
+export SCRIPT_LOCATION="curl -fsSL https://raw.githubusercontent.com/soter/scanner/0.1.0-alpha.0/"
+if [ "$APPSCODE_ENV" = "dev" ]; then
+    export SCRIPT_LOCATION="cat "
+fi
+
 KUBE_APISERVER_VERSION=$(kubectl version -o=json | $ONESSL jsonpath '{.serverVersion.gitVersion}')
 $ONESSL semver --check='>=1.9.0' $KUBE_APISERVER_VERSION
 if [ $? -eq 0 ]; then
@@ -191,21 +197,21 @@ export TLS_SERVING_CERT=$(cat server.crt | $ONESSL base64)
 export TLS_SERVING_KEY=$(cat server.key | $ONESSL base64)
 export KUBE_CA=$($ONESSL get kube-ca | $ONESSL base64)
 
-curl -fsSL https://raw.githubusercontent.com/soter/scanner/0.1.0-alpha.0/hack/deploy/operator.yaml | $ONESSL envsubst | kubectl apply -f -
+${SCRIPT_LOCATION}hack/deploy/operator.yaml | $ONESSL envsubst | kubectl apply -f -
 
 if [ "$SCANNER_ENABLE_RBAC" = true ]; then
     kubectl create serviceaccount $SCANNER_SERVICE_ACCOUNT --namespace $SCANNER_NAMESPACE
     kubectl label serviceaccount $SCANNER_SERVICE_ACCOUNT app=scanner --namespace $SCANNER_NAMESPACE
-    curl -fsSL https://raw.githubusercontent.com/soter/scanner/0.1.0-alpha.0/hack/deploy/rbac-list.yaml | $ONESSL envsubst | kubectl auth reconcile -f -
+    ${SCRIPT_LOCATION}hack/deploy/rbac-list.yaml | $ONESSL envsubst | kubectl auth reconcile -f -
 fi
 
 if [ "$SCANNER_RUN_ON_MASTER" -eq 1 ]; then
     kubectl patch deploy scanner -n $SCANNER_NAMESPACE \
-      --patch="$(curl -fsSL https://raw.githubusercontent.com/soter/scanner/0.1.0-alpha.0/hack/deploy/run-on-master.yaml)"
+      --patch="$(${SCRIPT_LOCATION}hack/deploy/run-on-master.yaml)"
 fi
 
 if [ "$SCANNER_ENABLE_VALIDATING_WEBHOOK" = true ]; then
-    curl -fsSL https://raw.githubusercontent.com/soter/scanner/0.1.0-alpha.0/hack/deploy/validating-webhook.yaml | $ONESSL envsubst | kubectl apply -f -
+    ${SCRIPT_LOCATION}hack/deploy/validating-webhook.yaml | $ONESSL envsubst | kubectl apply -f -
 fi
 
 echo

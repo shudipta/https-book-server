@@ -6,7 +6,7 @@ import (
 
 	"github.com/appscode/go/flags"
 	logs "github.com/appscode/go/log/golog"
-	"github.com/soter/scanner/pkg/commands/server"
+	"github.com/soter/scanner/pkg/cmds/server"
 	"k8s.io/client-go/util/homedir"
 )
 

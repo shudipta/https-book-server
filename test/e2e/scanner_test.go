@@ -8,6 +8,10 @@ import (
 	. "github.com/onsi/gomega"
 	core "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	apps "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
+	extensions "k8s.io/api/extensions/v1beta1"
 )
 
 var _ = Describe("Image Scanner", func() {
@@ -29,14 +33,14 @@ var _ = Describe("Image Scanner", func() {
 		obj runtime.Object
 		str1, str2, str3 string
 
-		ctx1 = func (workloadCode int) {
+		ctx1 = func (workloadType runtime.Object) {
 			Context("When some images are vulnerable", func() {
 				BeforeEach(func() {
 					By("Creating secret-1")
 					_, err := root.KubeClient.CoreV1().Secrets(secret1.Namespace).Create(secret1)
 					Expect(err).NotTo(HaveOccurred())
 
-					obj = f.NewWorkload(name, namespace, labels, containers1, secret1.Name, workloadCode)
+					obj = f.NewWorkload(name, namespace, labels, containers1, secret1.Name, workloadType)
 				})
 
 				It("Shouldn't be created", func() {
@@ -50,7 +54,7 @@ var _ = Describe("Image Scanner", func() {
 			})
 		}
 
-		ctx2 = func (workloadCode int, update bool) {
+		ctx2 = func (workloadType runtime.Object, update bool) {
 			str1 = "When no image is vulnerable"
 			if update {
 				str1 = "When some images are vulnerable"
@@ -67,11 +71,11 @@ var _ = Describe("Image Scanner", func() {
 					_, err := root.KubeClient.CoreV1().Secrets(secret2.Namespace).Create(secret2)
 					Expect(err).NotTo(HaveOccurred())
 
-					obj = f.NewWorkload(name, namespace, labels, containers2, secret2.Name, workloadCode)
+					obj = f.NewWorkload(name, namespace, labels, containers2, secret2.Name, workloadType)
 				})
 
 				AfterEach(func() {
-					f.DeleteWorkloads(workloadCode)
+					f.DeleteWorkloads(workloadType)
 				})
 
 				str2 = "Should be created"
@@ -92,7 +96,7 @@ var _ = Describe("Image Scanner", func() {
 
 					if update {
 						By("Updating")
-						obj = f.NewWorkload(name, namespace, labels, containers1, secret1.Name, workloadCode)
+						obj = f.NewWorkload(name, namespace, labels, containers1, secret1.Name, workloadType)
 						f.EventuallyUpdateWithVulnerableImage(root, obj).Should(Equal(true))
 					}
 				})
@@ -167,15 +171,15 @@ var _ = Describe("Image Scanner", func() {
 		})
 
 		Context("Creating Deployment with some vulnerable images", func() {
-			ctx1(framework.Deployment)
+			ctx1(&apps.Deployment{})
 		})
 
 		Context("Creating Deployment with non-vulnerable images", func() {
-			ctx2(framework.Deployment, false)
+			ctx2(&apps.Deployment{}, false)
 		})
 
 		Context("Updating Deployment", func() {
-			ctx2(framework.Deployment, true)
+			ctx2(&apps.Deployment{}, true)
 		})
 	})
 
@@ -185,15 +189,15 @@ var _ = Describe("Image Scanner", func() {
 		})
 
 		Context("Creating ReplicationController with some vulnerable images", func() {
-			ctx1(framework.ReplicationController)
+			ctx1(&core.ReplicationController{})
 		})
 
 		Context("Creating ReplicationController with non-vulnerable images", func() {
-			ctx2(framework.ReplicationController, false)
+			ctx2(&core.ReplicationController{}, false)
 		})
 
 		Context("Updating ReplicationController", func() {
-			ctx2(framework.ReplicationController, true)
+			ctx2(&core.ReplicationController{}, true)
 		})
 	})
 
@@ -203,15 +207,15 @@ var _ = Describe("Image Scanner", func() {
 		})
 
 		Context("Creating ReplicaSet with some vulnerable images", func() {
-			ctx1(framework.ReplicaSet)
+			ctx1(&extensions.ReplicaSet{})
 		})
 
 		Context("Creating ReplicaSet with non-vulnerable images", func() {
-			ctx2(framework.ReplicaSet, false)
+			ctx2(&extensions.ReplicaSet{}, false)
 		})
 
 		Context("Updating ReplicaSet", func() {
-			ctx2(framework.ReplicaSet, true)
+			ctx2(&extensions.ReplicaSet{}, true)
 		})
 	})
 
@@ -221,15 +225,15 @@ var _ = Describe("Image Scanner", func() {
 		})
 
 		Context("Creating DaemonSet with some vulnerable images", func() {
-			ctx1(framework.DaemonSet)
+			ctx1(&extensions.DaemonSet{})
 		})
 
 		Context("Creating DaemonSet with non-vulnerable images", func() {
-			ctx2(framework.DaemonSet, false)
+			ctx2(&extensions.DaemonSet{}, false)
 		})
 
 		Context("Updating DaemonSet", func() {
-			ctx2(framework.DaemonSet, true)
+			ctx2(&extensions.DaemonSet{}, true)
 		})
 	})
 
@@ -239,35 +243,31 @@ var _ = Describe("Image Scanner", func() {
 		})
 
 		Context("Creating Job with some vulnerable images", func() {
-			ctx1(framework.Job)
+			ctx1(&batchv1.Job{})
 		})
 
 		Context("Creating Job with some vulnerable images", func() {
-			ctx2(framework.Job, false)
+			ctx2(&batchv1.Job{}, false)
 		})
 
 		//Context("Updating Job", func() {
-		//	ctx2(framework.Job, true)
+		//	ctx2(&batchv1.Job{}, true)
 		//})
 	})
 
-	//Describe("Scan images in CronJob", func() {
-	//	AfterEach(func() {
-	//		f.DeleteAllSecrets()
-	//	})
-	//
-	//	Context("Creating CronJob with some vulnerable images", func() {
-	//		ctx1(framework.CronJob)
-	//	})
-	//
-	//	Context("Creating CronJob with some vulnerable images", func() {
-	//		ctx2(framework.CronJob, false)
-	//	})
-	//
-	//	Context("Updating CronJob", func() {
-	//		ctx2(framework.CronJob, true)
-	//	})
-	//})
+	Describe("Scan images in CronJob", func() {
+		AfterEach(func() {
+			f.DeleteAllSecrets()
+		})
+
+		Context("Creating CronJob with some vulnerable images", func() {
+			ctx1(&batchv1beta1.CronJob{})
+		})
+
+		Context("Creating CronJob with some vulnerable images", func() {
+			ctx2(&batchv1beta1.CronJob{}, false)
+		})
+	})
 
 	Describe("Scan images in StatefulSet", func() {
 		BeforeEach(func() {
@@ -283,15 +283,15 @@ var _ = Describe("Image Scanner", func() {
 		})
 
 		Context("Creating StatefulSet with some vulnerable images", func() {
-			ctx1(framework.StatefulSet)
+			ctx1(&apps.StatefulSet{})
 		})
 
 		Context("Creating StatefulSet with some vulnerable images", func() {
-			ctx2(framework.StatefulSet, false)
+			ctx2(&apps.StatefulSet{}, false)
 		})
 
 		Context("Updating StatefulSet", func() {
-			ctx2(framework.StatefulSet, true)
+			ctx2(&apps.StatefulSet{}, true)
 		})
 	})
 })

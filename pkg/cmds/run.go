@@ -1,11 +1,11 @@
-package commands
+package cmds
 
 import (
 	"io"
 
 	"github.com/appscode/go/log"
 	v "github.com/appscode/go/version"
-	"github.com/soter/scanner/pkg/commands/server"
+	"github.com/soter/scanner/pkg/cmds/server"
 	"github.com/spf13/cobra"
 )
 

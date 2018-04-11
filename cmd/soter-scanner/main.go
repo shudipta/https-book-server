@@ -6,7 +6,7 @@ import (
 
 	"github.com/appscode/go/log"
 	logs "github.com/appscode/go/log/golog"
-	"github.com/soter/scanner/pkg/commands"
+	"github.com/soter/scanner/pkg/cmds"
 	_ "k8s.io/client-go/kubernetes/fake"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
@@ -19,7 +19,7 @@ func main() {
 		runtime.GOMAXPROCS(runtime.NumCPU())
 	}
 
-	if err := commands.NewRootCmd().Execute(); err != nil {
+	if err := cmds.NewRootCmd().Execute(); err != nil {
 		log.Fatalln("Error in Scanner Main:", err)
 	}
 	log.Infoln("Exiting Scanner Main")

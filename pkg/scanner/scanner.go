@@ -11,7 +11,6 @@ import (
 	"github.com/hashicorp/golang-lru"
 	reg "github.com/heroku/docker-registry-client/registry"
 	api "github.com/soter/scanner/apis/scanner/v1alpha1"
-	"github.com/tamalsaha/go-oneliners"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -44,22 +43,34 @@ type layer2 struct {
 }
 
 const (
-	GettingManifestError         = 3
-	GettingCannonicalError       = 4
-	DecodingCannonical_1_Error   = 5
-	DecodingCannonical_2_Error   = 6
-	PullingLayersError           = 7
-	BearerTokenRequestError      = 8
-	BearerTokenResponseError     = 9
-	GettingClairAddrError        = 10
-	SendingLayerRequestError     = 11
-	SendingLayerError            = 12
-	VulnerabilitiesRequestError  = 13
-	VulnerabilitiesResponseError = 14
-	VulnerableStatus             = 15
-	NotVulnerableStatus          = 16
+	ParseImageNameError          = 3
+	GettingManifestError         = 4
+	GettingCannonicalError       = 5
+	DecodingCannonical_1_Error   = 6
+	DecodingCannonical_2_Error   = 7
+	PullingLayersError           = 8
+	BearerTokenRequestError      = 9
+	BearerTokenResponseError     = 10
+	GettingClairAddrError        = 11
+	SendingLayerRequestError     = 12
+	SendingLayerError            = 13
+	VulnerabilitiesRequestError  = 14
+	VulnerabilitiesResponseError = 15
+	VulnerableStatus             = 16
+	NotVulnerableStatus          = 17
 )
 
+// This method takes <registryUrl>, <imageName>, <username>, <password> and
+// returns (true, error) if any error occurred or vulnerability found otherwise return
+// (false, <nil>). First, it parses the <imageName> and connect to the registry. Then,
+// it gets the manifests for the <imageName>. Then for each layer in the manifests it
+// sends a LayerType{} obj to clair. Then it does a GET requests to clair and receives
+// a LayerType{} obj as response.Body. Then it filters this layer obj to get the features
+// and vulnerabilities. Finally, it stores them in cache against the layer name as key.
+// It stores them so that it finds them in cache without calling to clair and filtering
+// again if next time we need to scan same layer.
+// For more information about LayerType{}, https://coreos.com/clair/docs/latest/api_v1.html
+// will be helpful.
 func IsVulnerable(
 	kc kubernetes.Interface, fsCache, vulsCache *lru.TwoQueueCache,
 	registryUrl, imageName, username, password string,
@@ -74,9 +85,10 @@ func IsVulnerable(
 		Timeout: time.Minute,
 	}
 
-	registry, repo, tag := parseImageName(imageName)
-	if registryUrl == "" {
-		registryUrl = registry
+	// TODO: need to check for digest part
+	registryUrl, repo, tag, _, err := parseImageName(imageName, registryUrl)
+	if err != nil {
+		return Canonical1{}, ParseImageNameError, err
 	}
 
 	hub := &reg.Registry{
@@ -103,7 +115,6 @@ func IsVulnerable(
 		return Canonical1{}, DecodingCannonical_1_Error,
 			fmt.Errorf("error in decoding into canonical1 for image(%s): %v\n", imageName, err)
 	}
-	oneliners.PrettyJson(imageManifest, "image")
 
 	if imageManifest.Layers == nil {
 		var image2 Canonical2
@@ -117,7 +128,6 @@ func IsVulnerable(
 			imageManifest.Layers[len(image2.FsLayers)-1-i].Digest = l.BlobSum
 		}
 		imageManifest.SchemaVersion = image2.SchemaVersion
-		//imageManifest.Config.Digest = "sha256:1df6g5874tryerjn6549a8d461vs6rf41468astgretv41xcb54ser6"
 	}
 
 	layersLen := len(imageManifest.Layers)
@@ -197,10 +207,9 @@ func IsVulnerable(
 			if err != nil {
 				return imageManifest, VulnerabilitiesResponseError,
 					fmt.Errorf("error in decoding VulnerabilitiesResponse for image(%s).layer[%d]: %v\n", imageName, i, err)
-			} else {
-				fs = getFeatures(layerObj)
-				vuls = getVulnerabilities(layerObj)
 			}
+			fs = getFeatures(layerObj)
+			vuls = getVulnerabilities(layerObj)
 
 			//oneliners.PrettyJson(fs, "Features")
 			//oneliners.PrettyJson(vuls, "vulnerabilities")

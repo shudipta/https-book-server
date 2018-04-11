@@ -17,13 +17,12 @@ type ScannerController struct {
 	KubeClient kubernetes.Interface
 	recorder   record.EventRecorder
 
-	LayerCache *lru.TwoQueueCache
-	FsCache    *lru.TwoQueueCache
-	VulsCache  *lru.TwoQueueCache
+	FsCache   *lru.TwoQueueCache
+	VulsCache *lru.TwoQueueCache
 }
 
 func (c *ScannerController) RunOpsServer(stopCh <-chan struct{}) error {
-	//root.New(c).Run()
+	//cache.New(c).Run()
 
 	m := pat.New()
 	m.Get("/metrics", promhttp.Handler())

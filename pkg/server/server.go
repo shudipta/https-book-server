@@ -9,9 +9,9 @@ import (
 	"github.com/soter/scanner/apis/scanner"
 	"github.com/soter/scanner/apis/scanner/install"
 	"github.com/soter/scanner/apis/scanner/v1alpha1"
+	"github.com/soter/scanner/pkg/cache"
 	"github.com/soter/scanner/pkg/controller"
 	irregistry "github.com/soter/scanner/pkg/registry/scanner/imagereview"
-	"github.com/soter/scanner/pkg/root"
 	admission "k8s.io/api/admission/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apimachinery"
@@ -64,7 +64,7 @@ type ScannerServer struct {
 }
 
 func (op *ScannerServer) Run(stopCh <-chan struct{}) error {
-	go root.New(op.Controller).Run()
+	go cache.New(op.Controller).Run()
 
 	go op.Controller.RunOpsServer(stopCh)
 	return op.GenericAPIServer.PrepareRun().Run(stopCh)
@@ -258,6 +258,7 @@ func (c *completedConfig) AddAdmissionHooks(ctrl *controller.ScannerController) 
 		ctrl.NewReplicationControllerWebhook(),
 		ctrl.NewReplicaSetWebhook(),
 		ctrl.NewJobWebhook(),
+		ctrl.NewCronJobWebhook(),
 	}
 	return nil
 }

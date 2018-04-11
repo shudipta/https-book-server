@@ -23,8 +23,6 @@ type RegistrySecret struct {
 	Password string `json:"password"`
 }
 
-// getAllSecrets() takes imagePullSecrets and return the list of secret names as an array of
-// string
 func GetAllSecrets(imagePullSecrets []corev1.LocalObjectReference) []string {
 	secretNames := []string{}
 	if (imagePullSecrets) == nil {
@@ -37,7 +35,6 @@ func GetAllSecrets(imagePullSecrets []corev1.LocalObjectReference) []string {
 	return secretNames
 }
 
-// checkworkload() checks vulnerabilities for given workload obj
 func (c *ScannerController) CheckWorkload(w *workload.Workload, precache bool) (*workload.Workload, bool, error) {
 	secretNames := GetAllSecrets(w.Spec.Template.Spec.ImagePullSecrets)
 
@@ -76,8 +73,19 @@ func (c *ScannerController) CheckContainers(
 
 // This method takes namespace_name <namespace> of provided secrets <secretNames> and image name
 // of a docker image. For each secret, it reads the config data of secret and store it to
-// registrySecrets (map[string]RegistrySecret) where the api url is the key and value is the
-// credentials. Then it scans to find vulnerabilities in the image for all secrets' content. It returns
+// auth variable (map[string]map[string]RegistrySecret)
+// we need this type to store config data, because original config date is in following format:
+// {
+//   "auths":{
+// 	   <api url>:{
+// 	 	 "username":<username>,
+// 	 	 "password":<password>,
+// 	 	 "email":<email>,
+// 	 	 "auth":<auth token>
+// 	   }
+// 	 }
+// }
+// Then it scans to find vulnerabilities in the image for all credentials. It returns
 // 			(true, error); if any error occured
 // 			(false, nil); if no vulnerability exists
 // If the image is not found with the secret info, then it tries with the public docker
@@ -116,15 +124,14 @@ func (c *ScannerController) CheckImage(
 					key, image, val.Username, val.Password,
 					precache,
 				)
-				if status > 3 {
+				if status > 4 {
 					return imageManifest, status, err
 				}
 			}
 		}
 	}
 
-	//registryUrl := "https://registry-1.docker.io/"
-	registryUrl := ""
+	registryUrl := "https://registry-1.docker.io/"
 	username := "" // anonymous
 	password := "" // anonymous
 
@@ -133,7 +140,7 @@ func (c *ScannerController) CheckImage(
 		registryUrl, image, username, password,
 		precache,
 	)
-	if status < 4 {
+	if status < 5 {
 		return imageManifest, status, fmt.Errorf("error in secrets for image(%s): %v", image, err)
 	}
 
