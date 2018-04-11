@@ -1,0 +1,12 @@
+apiVersion: v1
+description: 'Scanner by AppsCode - Docker Image Scanner'
+name: scanner
+version: 0.1.0
+appVersion: 0.1.0
+home: https://github.com/soter/scanner
+icon: https://cdn.appscode.com/images/icon/scanner.png
+sources:
+  - https://github.com/soter/scanner
+maintainers:
+  - name: appscode
+    email: support@appscode.com

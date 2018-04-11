@@ -1,0 +1,141 @@
+{{- if .Values.apiserver.enableValidatingWebhook }}
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: admission.scanner.soter.cloud
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    app: "{{ template "scanner.name" . }}"
+    heritage: "{{ .Release.Service }}"
+    release: "{{ .Release.Name }}"
+webhooks:
+- name: deployment.admission.scanner.soter.cloud
+  clientConfig:
+    service:
+      namespace: default
+      name: kubernetes
+      path: /apis/admission.scanner.soter.cloud/v1alpha1/deployments
+    caBundle: {{ b64enc .Values.apiserver.ca }}
+  rules:
+  - operations:
+    - CREATE
+    - UPDATE
+    apiGroups:
+    - apps
+    - extensions
+    apiVersions:
+    - "*"
+    resources:
+    - deployments
+  failurePolicy: Fail
+- name: daemonset.admission.scanner.soter.cloud
+  clientConfig:
+    service:
+      namespace: default
+      name: kubernetes
+      path: /apis/admission.scanner.soter.cloud/v1alpha1/daemonsets
+    caBundle: {{ b64enc .Values.apiserver.ca }}
+  rules:
+  - operations:
+    - CREATE
+    - UPDATE
+    apiGroups:
+    - apps
+    - extensions
+    apiVersions:
+    - "*"
+    resources:
+    - daemonsets
+  failurePolicy: Fail
+- name: statefulset.admission.scanner.soter.cloud
+  clientConfig:
+    service:
+      namespace: default
+      name: kubernetes
+      path: /apis/admission.scanner.soter.cloud/v1alpha1/statefulsets
+    caBundle: {{ b64enc .Values.apiserver.ca }}
+  rules:
+  - operations:
+    - CREATE
+    - UPDATE
+    apiGroups:
+    - apps
+    apiVersions:
+    - "*"
+    resources:
+    - statefulsets
+  failurePolicy: Fail
+- name: replicationcontroller.admission.scanner.soter.cloud
+  clientConfig:
+    service:
+      namespace: default
+      name: kubernetes
+      path: /apis/admission.scanner.soter.cloud/v1alpha1/replicationcontrollers
+    caBundle: {{ b64enc .Values.apiserver.ca }}
+  rules:
+  - operations:
+    - CREATE
+    - UPDATE
+    apiGroups:
+    - ""
+    apiVersions:
+    - "*"
+    resources:
+    - replicationcontrollers
+  failurePolicy: Fail
+- name: replicaset.admission.scanner.soter.cloud
+  clientConfig:
+    service:
+      namespace: default
+      name: kubernetes
+      path: /apis/admission.scanner.soter.cloud/v1alpha1/replicasets
+    caBundle: {{ b64enc .Values.apiserver.ca }}
+  rules:
+  - operations:
+    - CREATE
+    - UPDATE
+    apiGroups:
+    - apps
+    - extensions
+    apiVersions:
+    - "*"
+    resources:
+    - replicasets
+  failurePolicy: Fail
+- name: job.admission.scanner.soter.cloud
+  clientConfig:
+    service:
+      namespace: default
+      name: kubernetes
+      path: /apis/admission.scanner.soter.cloud/v1alpha1/jobs
+    caBundle: {{ b64enc .Values.apiserver.ca }}
+  rules:
+  - operations:
+    - CREATE
+    - UPDATE
+    apiGroups:
+    - batch
+    apiVersions:
+    - "*"
+    resources:
+    - jobs
+  failurePolicy: Fail
+- name: cronjob.admission.scanner.soter.cloud
+  clientConfig:
+    service:
+      namespace: default
+      name: kubernetes
+      path: /apis/admission.scanner.soter.cloud/v1alpha1/cronjobs
+    caBundle: {{ b64enc .Values.apiserver.ca }}
+  rules:
+  - operations:
+    - CREATE
+    - UPDATE
+    apiGroups:
+    - batch
+    apiVersions:
+    - "*"
+    resources:
+    - cronjobs
+  failurePolicy: Fail
+{{ end }}
