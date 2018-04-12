@@ -3,15 +3,15 @@ package e2e_test
 import (
 	"os"
 
-	"github.com/soter/scanner/test/framework"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	core "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+	"github.com/soter/scanner/test/framework"
 	apps "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
+	core "k8s.io/api/core/v1"
 	extensions "k8s.io/api/extensions/v1beta1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 var _ = Describe("Image Scanner", func() {
@@ -23,17 +23,17 @@ var _ = Describe("Image Scanner", func() {
 		containers1     []core.Container
 		containers2     []core.Container
 		containers3     []core.Container
-		data1, data2            string
-		skip1, skip2            bool
+		data1, data2    string
+		skip1, skip2    bool
 
-		secret1, secret2                    *core.Secret
-		service, svc              *core.Service
-		err error
+		secret1, secret2 *core.Secret
+		service, svc     *core.Service
+		err              error
 
-		obj runtime.Object
+		obj              runtime.Object
 		str1, str2, str3 string
 
-		ctx1 = func (workloadType runtime.Object) {
+		ctx1 = func(workloadType runtime.Object) {
 			Context("When some images are vulnerable", func() {
 				BeforeEach(func() {
 					By("Creating secret-1")
@@ -54,7 +54,7 @@ var _ = Describe("Image Scanner", func() {
 			})
 		}
 
-		ctx2 = func (workloadType runtime.Object, update bool) {
+		ctx2 = func(workloadType runtime.Object, update bool) {
 			str1 = "When no image is vulnerable"
 			if update {
 				str1 = "When some images are vulnerable"
@@ -118,7 +118,7 @@ var _ = Describe("Image Scanner", func() {
 			skip1 = true
 		} else {
 			data1 = val
-			secret1 = f.NewSecret(name + "-secret-1", namespace, data1, labels)
+			secret1 = f.NewSecret(name+"-secret-1", namespace, data1, labels)
 		}
 
 		data2 = ""
@@ -127,7 +127,7 @@ var _ = Describe("Image Scanner", func() {
 			skip2 = true
 		} else {
 			data2 = val
-			secret2 = f.NewSecret(name + "-secret-2", namespace, data2, labels)
+			secret2 = f.NewSecret(name+"-secret-2", namespace, data2, labels)
 		}
 
 		containers1 = []core.Container{

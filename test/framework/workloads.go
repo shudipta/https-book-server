@@ -2,6 +2,8 @@ package framework
 
 import (
 	"strings"
+	"time"
+
 	workload "github.com/appscode/kubernetes-webhook-util/workload/v1"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
@@ -12,9 +14,8 @@ import (
 	kerr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/runtime"
-	"time"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func int32Ptr(i int32) *int32 { return &i }
@@ -23,7 +24,7 @@ func newObjectMeta(name, namespace string, labels map[string]string) metav1.Obje
 	return metav1.ObjectMeta{
 		Name:      name,
 		Namespace: namespace,
-		Labels: labels,
+		Labels:    labels,
 	}
 }
 
@@ -52,7 +53,7 @@ func newDeployment(
 	labels map[string]string,
 	containers []core.Container, secret string) *appsv1.Deployment {
 
-		return &appsv1.Deployment{
+	return &appsv1.Deployment{
 		ObjectMeta: newObjectMeta(name, namespace, labels),
 		Spec: appsv1.DeploymentSpec{
 			Replicas: int32Ptr(1),
@@ -154,8 +155,8 @@ func newStatefulSet(
 		Spec: appsv1.StatefulSetSpec{
 			ServiceName: name,
 			Replicas:    int32Ptr(1),
-			Selector: newSelector(labels),
-			Template: newPodTemplateSpec(secret, labels, containers),
+			Selector:    newSelector(labels),
+			Template:    newPodTemplateSpec(secret, labels, containers),
 		},
 	}
 }
@@ -226,8 +227,8 @@ func (f *Invocation) EventuallyCreateWithVulnerableImage(root *Framework, obj ru
 
 			return strings.Contains(err.Error(), "contains vulnerabilities")
 		},
-		time.Minute * 2,
-		time.Millisecond * 5,
+		time.Minute*2,
+		time.Millisecond*5,
 	)
 }
 
@@ -240,7 +241,7 @@ func (f *Invocation) EventuallyUpdateWithVulnerableImage(root *Framework, obj ru
 			return strings.Contains(err.Error(), "contains vulnerabilities")
 		},
 		time.Minute,
-		time.Millisecond * 5,
+		time.Millisecond*5,
 	)
 }
 
@@ -250,7 +251,7 @@ func (f *Invocation) EventuallyCreateWithNonVulnerableImage(root *Framework, obj
 			return workload.Create(root.KubeClient, obj)
 		},
 		time.Minute,
-		time.Millisecond * 5,
+		time.Millisecond*5,
 	)
 }
 

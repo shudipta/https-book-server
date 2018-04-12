@@ -1,9 +1,9 @@
 package framework
 
 import (
+	"github.com/appscode/go/crypto/rand"
 	"k8s.io/client-go/kubernetes"
 	ka "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
-	"github.com/appscode/go/crypto/rand"
 )
 
 type Framework struct {

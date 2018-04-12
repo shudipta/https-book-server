@@ -20,9 +20,9 @@ type E2EOptions struct {
 
 var (
 	options = &E2EOptions{
-		ControllerOptions:   server.NewControllerOptions(),
-		KubeConfig:     filepath.Join(homedir.HomeDir(), ".kube", "config"),
-		StartAPIServer: true,
+		ControllerOptions: server.NewControllerOptions(),
+		KubeConfig:        filepath.Join(homedir.HomeDir(), ".kube", "config"),
+		StartAPIServer:    true,
 	}
 )
 
