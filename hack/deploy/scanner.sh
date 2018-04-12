@@ -55,7 +55,7 @@ export SCANNER_ENABLE_ANALYTICS=true
 export SCANNER_UNINSTALL=0
 
 export APPSCODE_ENV=${APPSCODE_ENV:-prod}
-export SCRIPT_LOCATION="curl -fsSL https://raw.githubusercontent.com/soter/scanner/0.1.0-alpha.0/"
+export SCRIPT_LOCATION="curl -fsSL https://raw.githubusercontent.com/soter/scanner/master/"
 if [ "$APPSCODE_ENV" = "dev" ]; then
     export SCRIPT_LOCATION="cat "
 fi
