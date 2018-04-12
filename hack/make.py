@@ -75,9 +75,9 @@ def version():
 
 
 def fmt():
-    libbuild.ungroup_go_imports('apis', 'client', 'cmd', 'pkg', 'test')
-    die(call('goimports -w apis client cmd pkg test'))
-    call('gofmt -s -w apis client cmd pkg test')
+    libbuild.ungroup_go_imports('apis', 'client', 'cmd', 'hack', 'pkg', 'test')
+    die(call('goimports -w apis client cmd hack pkg test'))
+    call('gofmt -s -w apis client cmd hack pkg test')
 
 
 def vet():
