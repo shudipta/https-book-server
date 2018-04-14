@@ -32,7 +32,6 @@ spec:
         image: ${SCANNER_DOCKER_REGISTRY}/scanner:remove
         ports:
         - containerPort: 8443
-        - containerPort: 56790
         volumeMounts:
         - mountPath: /var/serving-cert
           name: serving-cert
@@ -76,9 +75,6 @@ spec:
   - name: api
     port: 443
     targetPort: 8443
-  - name: ops
-    port: 56790
-    targetPort: 56790
   selector:
     app: scanner
 ---

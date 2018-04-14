@@ -10,17 +10,13 @@ import (
 
 type ControllerOptions struct {
 	EnableRBAC bool
-	OpsAddress string
 }
 
 func NewControllerOptions() *ControllerOptions {
-	return &ControllerOptions{
-		OpsAddress: ":56790",
-	}
+	return &ControllerOptions{}
 }
 
 func (s *ControllerOptions) AddGoFlags(fs *flag.FlagSet) {
-	fs.StringVar(&s.OpsAddress, "ops-address", s.OpsAddress, "Address to listen on for web interface and telemetry.")
 	fs.BoolVar(&s.EnableRBAC, "rbac", s.EnableRBAC, "Enable RBAC for operator")
 }
 
@@ -34,7 +30,6 @@ func (s *ControllerOptions) ApplyTo(cfg *controller.ControllerConfig) error {
 	var err error
 
 	cfg.EnableRBAC = s.EnableRBAC
-	cfg.OpsAddress = s.OpsAddress
 
 	if cfg.KubeClient, err = kubernetes.NewForConfig(cfg.ClientConfig); err != nil {
 		return err

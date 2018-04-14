@@ -51,7 +51,6 @@ scanner run [flags]
       --enable-swagger-ui                                       Enables swagger ui on the apiserver at /swagger-ui
   -h, --help                                                    help for run
       --kubeconfig string                                       kubeconfig file pointing at the 'core' kubernetes server.
-      --ops-address string                                      Address to listen on for web interface and telemetry. (default ":56790")
       --profiling                                               Enable profiling via web interface host:port/debug/pprof/ (default true)
       --rbac                                                    Enable RBAC for operator
       --requestheader-allowed-names strings                     List of client certificate common names to allow to provide usernames in headers specified by --requestheader-username-headers. If empty, any client certificate validated by the authorities in --requestheader-client-ca-file is allowed.

@@ -66,7 +66,6 @@ type ScannerServer struct {
 func (op *ScannerServer) Run(stopCh <-chan struct{}) error {
 	go cache.New(op.Controller).Run()
 
-	go op.Controller.RunOpsServer(stopCh)
 	return op.GenericAPIServer.PrepareRun().Run(stopCh)
 }
 
