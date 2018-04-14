@@ -10,14 +10,11 @@ import (
 
 type PreScanner struct {
 	scanner *controller.ScannerController
-	//kubeClient kubernetes.Interface
-
-	lock sync.RWMutex
+	lock    sync.RWMutex
 }
 
 func New(c *controller.ScannerController) *PreScanner {
 	return &PreScanner{
-		//kubeClient: kubeClient,
 		scanner: c,
 	}
 }

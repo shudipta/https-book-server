@@ -16,7 +16,7 @@ func (s *PreScanner) scanDeployments() (errs []error) {
 		if w, err := workload.ConvertToWorkload(&objects.Items[i]); err != nil {
 			errs = append(errs, err)
 		} else {
-			_, _, err := s.scanner.CheckWorkload(w, true)
+			_, _, err := s.scanner.CheckWorkload(w)
 			if err != nil {
 				errs = append(errs, err)
 			}
@@ -36,7 +36,7 @@ func (s *PreScanner) scanReplicationControllers() (errs []error) {
 		if w, err := workload.ConvertToWorkload(&objects.Items[i]); err != nil {
 			errs = append(errs, err)
 		} else {
-			_, _, err := s.scanner.CheckWorkload(w, true)
+			_, _, err := s.scanner.CheckWorkload(w)
 			if err != nil {
 				errs = append(errs, err)
 			}
@@ -56,7 +56,7 @@ func (s *PreScanner) scanReplicaSets() (errs []error) {
 		if w, err := workload.ConvertToWorkload(&objects.Items[i]); err != nil {
 			errs = append(errs, err)
 		} else {
-			_, _, err := s.scanner.CheckWorkload(w, true)
+			_, _, err := s.scanner.CheckWorkload(w)
 			if err != nil {
 				errs = append(errs, err)
 			}
@@ -76,7 +76,7 @@ func (s *PreScanner) scanDaemonSets() (errs []error) {
 		if w, err := workload.ConvertToWorkload(&objects.Items[i]); err != nil {
 			errs = append(errs, err)
 		} else {
-			_, _, err := s.scanner.CheckWorkload(w, true)
+			_, _, err := s.scanner.CheckWorkload(w)
 			if err != nil {
 				errs = append(errs, err)
 			}
@@ -96,7 +96,7 @@ func (s *PreScanner) scanJobs() (errs []error) {
 		if w, err := workload.ConvertToWorkload(&objects.Items[i]); err != nil {
 			errs = append(errs, err)
 		} else {
-			_, _, err := s.scanner.CheckWorkload(w, true)
+			_, _, err := s.scanner.CheckWorkload(w)
 			if err != nil {
 				errs = append(errs, err)
 			}
@@ -116,7 +116,7 @@ func (s *PreScanner) scanCronJobs() (errs []error) {
 		if w, err := workload.ConvertToWorkload(&objects.Items[i]); err != nil {
 			errs = append(errs, err)
 		} else {
-			_, _, err := s.scanner.CheckWorkload(w, true)
+			_, _, err := s.scanner.CheckWorkload(w)
 			if err != nil {
 				errs = append(errs, err)
 			}
@@ -136,7 +136,7 @@ func (s *PreScanner) scanStatefulSets() (errs []error) {
 		if w, err := workload.ConvertToWorkload(&objects.Items[i]); err != nil {
 			errs = append(errs, err)
 		} else {
-			_, _, err := s.scanner.CheckWorkload(w, true)
+			_, _, err := s.scanner.CheckWorkload(w)
 			if err != nil {
 				errs = append(errs, err)
 			}

@@ -72,8 +72,7 @@ const (
 // will be helpful.
 func IsVulnerable(
 	kc kubernetes.Interface,
-	registryUrl, imageName, username, password string,
-	precache bool) ([]api.Feature, []api.Vulnerability, int, error) {
+	registryUrl, imageName, username, password string) ([]api.Feature, []api.Vulnerability, int, error) {
 
 	client := http.Client{
 		Transport: &http.Transport{
@@ -202,7 +201,7 @@ func IsVulnerable(
 	features := getFeatures(layerObj)
 	vulnerabilities := getVulnerabilities(layerObj)
 
-	if !precache && vulnerabilities != nil {
+	if vulnerabilities != nil {
 		return features, vulnerabilities, VulnerableStatus,
 			fmt.Errorf("Image(%s) contains vulnerabilities", imageName)
 	}
