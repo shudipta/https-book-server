@@ -45,15 +45,14 @@ func (r *REST) Create(ctx apirequest.Context, obj runtime.Object, _ rest.Validat
 	ns := apirequest.NamespaceValue(ctx)
 	secretNames := controller.GetAllSecrets(req.Request.ImagePullSecrets)
 
-	imageManifest, status, err := r.controller.CheckImage(ns, req.Request.Image, secretNames, true)
+	features, vulnerabilities, status, err := r.controller.CheckImage(ns, req.Request.Image, secretNames, true)
 	if status != scanner.VulnerableStatus && status != scanner.NotVulnerableStatus {
 		return nil, err
 	}
 
-	fs, vuls := r.controller.GetImageReview(imageManifest)
 	req.Response = &api.ImageReviewResponse{
-		Features:        fs,
-		Vulnerabilities: vuls,
+		Features:        features,
+		Vulnerabilities: vulnerabilities,
 	}
 
 	oneliners.PrettyJson(req.Response)

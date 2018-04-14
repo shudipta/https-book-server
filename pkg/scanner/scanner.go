@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/hashicorp/golang-lru"
 	reg "github.com/heroku/docker-registry-client/registry"
 	api "github.com/soter/scanner/apis/scanner/v1alpha1"
 	"k8s.io/client-go/kubernetes"
@@ -72,9 +71,9 @@ const (
 // For more information about LayerType{}, https://coreos.com/clair/docs/latest/api_v1.html
 // will be helpful.
 func IsVulnerable(
-	kc kubernetes.Interface, fsCache, vulsCache *lru.TwoQueueCache,
+	kc kubernetes.Interface,
 	registryUrl, imageName, username, password string,
-	precache bool) (Canonical1, int, error) {
+	precache bool) ([]api.Feature, []api.Vulnerability, int, error) {
 
 	client := http.Client{
 		Transport: &http.Transport{
@@ -85,10 +84,14 @@ func IsVulnerable(
 		Timeout: time.Minute,
 	}
 
+	clairClient := http.Client{
+		Timeout: time.Minute,
+	}
+
 	// TODO: need to check for digest part
 	registryUrl, repo, tag, _, err := parseImageName(imageName, registryUrl)
 	if err != nil {
-		return Canonical1{}, ParseImageNameError, err
+		return []api.Feature{}, []api.Vulnerability{}, ParseImageNameError, err
 	}
 
 	hub := &reg.Registry{
@@ -101,25 +104,25 @@ func IsVulnerable(
 
 	manifest, err := hub.ManifestV2(repo, tag)
 	if err != nil {
-		return Canonical1{}, GettingManifestError,
+		return []api.Feature{}, []api.Vulnerability{}, GettingManifestError,
 			fmt.Errorf("error in getting manifest for image(%s): %v\n", imageName, err)
 	}
 	canonicalBytes, err := manifest.MarshalJSON()
 	if err != nil {
-		return Canonical1{}, GettingCannonicalError,
+		return []api.Feature{}, []api.Vulnerability{}, GettingCannonicalError,
 			fmt.Errorf("error in getting manifest.canonical for image(%s): %v\n", imageName, err)
 	}
 
 	var imageManifest Canonical1
 	if err := json.NewDecoder(bytes.NewReader(canonicalBytes)).Decode(&imageManifest); err != nil {
-		return Canonical1{}, DecodingCannonical_1_Error,
+		return []api.Feature{}, []api.Vulnerability{}, DecodingCannonical_1_Error,
 			fmt.Errorf("error in decoding into canonical1 for image(%s): %v\n", imageName, err)
 	}
 
 	if imageManifest.Layers == nil {
 		var image2 Canonical2
 		if err := json.NewDecoder(bytes.NewReader(canonicalBytes)).Decode(&image2); err != nil {
-			return Canonical1{}, DecodingCannonical_2_Error,
+			return []api.Feature{}, []api.Vulnerability{}, DecodingCannonical_2_Error,
 				fmt.Errorf("error in decoding into canonical2 for image(%s): %v\n", imageName, err)
 		}
 
@@ -130,22 +133,9 @@ func IsVulnerable(
 		imageManifest.SchemaVersion = image2.SchemaVersion
 	}
 
-	layersLen := len(imageManifest.Layers)
-	if layersLen == 0 {
-		return imageManifest, PullingLayersError,
-			fmt.Errorf("error is pulling fsLayers for image(%s)\n", imageName)
-	} else {
-		fmt.Println("Analysing", layersLen, "layers")
-	}
-
-	clairClient := http.Client{
-		Timeout: time.Minute,
-	}
-
-	//var parent string
 	req, _ := requestBearerToken(repo, username, password)
 	if err != nil {
-		return imageManifest, BearerTokenRequestError,
+		return []api.Feature{}, []api.Vulnerability{}, BearerTokenRequestError,
 			fmt.Errorf("error in creating BearerToken request for image(%s): %v\n", imageName, err)
 	}
 
@@ -153,73 +143,69 @@ func IsVulnerable(
 		client.Do(req),
 	)
 	if err != nil {
-		return imageManifest, BearerTokenResponseError,
+		return []api.Feature{}, []api.Vulnerability{}, BearerTokenResponseError,
 			fmt.Errorf("error in getting BearerToken response for image(%s): %v\n", imageName, err)
 	}
 
 	clairAddr, err := getAddress(kc)
 	if err != nil {
-		return imageManifest, GettingClairAddrError,
+		return []api.Feature{}, []api.Vulnerability{}, GettingClairAddrError,
 			fmt.Errorf("error in getting ClairAddr for image(%s): %v", imageName, err)
 	}
 
+	var parent string
+	layersLen := len(imageManifest.Layers)
+	if layersLen == 0 {
+		return []api.Feature{}, []api.Vulnerability{}, PullingLayersError,
+			fmt.Errorf("error is pulling fsLayers for image(%s)\n", imageName)
+	} else {
+		fmt.Println("Analysing", layersLen, "layers")
+	}
 	for i := 0; i < layersLen; i++ {
-		lName := HashPart(imageManifest.Config.Digest) + HashPart(imageManifest.Layers[i].Digest)
-
-		var (
-			fs   = []api.Feature{}
-			vuls = []api.Vulnerability{}
-		)
-
-		if val, exists := vulsCache.Get(lName); exists {
-			vuls = val.([]api.Vulnerability)
-		} else {
-			l := &LayerType{
-				Name: lName,
-				Path: fmt.Sprintf("%s/%s/%s/%s", registryUrl+"/v2", repo, "blobs", imageManifest.Layers[i].Digest),
-				//ParentName: parent,
-				ParentName: "",
-				Format:     "Docker",
-				Headers: HeadersType{
-					Authorization: token,
-				},
-			}
-			//parent = l.Name
-
-			req, err := requestSendingLayer(l, clairAddr)
-			if err != nil {
-				return imageManifest, SendingLayerRequestError,
-					fmt.Errorf("error in creating SendingLayerRequest for image(%s).layer[%d]: %v\n", imageName, i, err)
-			}
-			_, err = clairClient.Do(req)
-			if err != nil {
-				return imageManifest, SendingLayerError,
-					fmt.Errorf("error in sending layer of image(%s).layer[%d]: %v\n", imageName, i, err)
-			}
-
-			req, err = requestVulnerabilities(l.Name, clairAddr)
-			if err != nil {
-				return imageManifest, VulnerabilitiesRequestError,
-					fmt.Errorf("error in creating VulnerabilitiesRequest for image(%s).layer[%d]: %v\n", imageName, i, err)
-			}
-
-			layerObj, err := decode(clairClient.Do(req))
-			if err != nil {
-				return imageManifest, VulnerabilitiesResponseError,
-					fmt.Errorf("error in decoding VulnerabilitiesResponse for image(%s).layer[%d]: %v\n", imageName, i, err)
-			}
-			fs = getFeatures(layerObj)
-			vuls = getVulnerabilities(layerObj)
-
-			//oneliners.PrettyJson(fs, "Features")
-			//oneliners.PrettyJson(vuls, "vulnerabilities")
-			cacheFeaturesAndVulnerabilities(fsCache, vulsCache, l.Name, fs, vuls)
+		l := &LayerType{
+			Name:       HashPart(imageManifest.Config.Digest) + HashPart(imageManifest.Layers[i].Digest),
+			Path:       fmt.Sprintf("%s/%s/%s/%s", registryUrl+"/v2", repo, "blobs", imageManifest.Layers[i].Digest),
+			ParentName: parent,
+			Format:     "Docker",
+			Headers: HeadersType{
+				Authorization: token,
+			},
 		}
-		if !precache && vuls != nil {
-			return imageManifest, VulnerableStatus,
-				fmt.Errorf("Image(%s) contains vulnerabilities", imageName)
+		parent = l.Name
+
+		req, err := requestSendingLayer(l, clairAddr)
+		if err != nil {
+			return []api.Feature{}, []api.Vulnerability{}, SendingLayerRequestError,
+				fmt.Errorf("error in creating SendingLayerRequest for %dth layer of image(%s): %v\n", i, imageName, err)
+		}
+		_, err = clairClient.Do(req)
+		if err != nil {
+			return []api.Feature{}, []api.Vulnerability{}, SendingLayerError,
+				fmt.Errorf("error in sending %dth layer of image(%s): %v\n", i, imageName, err)
 		}
 	}
 
-	return imageManifest, NotVulnerableStatus, nil
+	req, err = requestVulnerabilities(
+		HashPart(imageManifest.Config.Digest)+HashPart(imageManifest.Layers[layersLen-1].Digest), clairAddr,
+	)
+	if err != nil {
+		return []api.Feature{}, []api.Vulnerability{}, VulnerabilitiesRequestError,
+			fmt.Errorf("error in creating VulnerabilitiesRequest for image(%s): %v\n", imageName, err)
+	}
+
+	layerObj, err := decode(clairClient.Do(req))
+	if err != nil {
+		return []api.Feature{}, []api.Vulnerability{}, VulnerabilitiesResponseError,
+			fmt.Errorf("error in decoding VulnerabilitiesResponse for image(%s): %v\n", imageName, err)
+	}
+
+	features := getFeatures(layerObj)
+	vulnerabilities := getVulnerabilities(layerObj)
+
+	if !precache && vulnerabilities != nil {
+		return features, vulnerabilities, VulnerableStatus,
+			fmt.Errorf("Image(%s) contains vulnerabilities", imageName)
+	}
+
+	return features, vulnerabilities, NotVulnerableStatus, nil
 }

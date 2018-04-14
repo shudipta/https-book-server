@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/hashicorp/golang-lru"
 	api "github.com/soter/scanner/apis/scanner/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -171,23 +170,10 @@ func parseImageName(imageName, registryUrl string) (string, string, string, stri
 	return registryUrl, repo, tag, digest, err
 }
 
-func hashPart(digest string) string {
-	if len(digest) < 7 {
-		return ""
-	}
-
-	return digest[7:]
-}
-
 func HashPart(digest string) string {
 	if len(digest) < 7 {
 		return ""
 	}
 
 	return digest[7:]
-}
-
-func cacheFeaturesAndVulnerabilities(fsCache, vulsCache *lru.TwoQueueCache, layerName string, fs []api.Feature, vuls []api.Vulnerability) {
-	fsCache.Add(layerName, fs)
-	vulsCache.Add(layerName, vuls)
 }

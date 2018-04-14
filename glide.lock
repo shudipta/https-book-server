@@ -1,5 +1,5 @@
 hash: a8741d382b02824017e3c9d45c74e9984315e73fe2fd73127ef2ec7d7a4fa1e8
-updated: 2018-04-11T10:36:48.532128014-07:00
+updated: 2018-04-14T09:09:27.2091036-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -351,11 +351,11 @@ imports:
 - name: github.com/spf13/afero
   version: bb8f1927f2a9d3ab41c9340aa034f6b803f4359c
 - name: github.com/spf13/cobra
-  version: cd30c2a7e91a1d63fd9a0027accf18a681e9d50b
+  version: 615425954c3b0d9485a7027d4d451fdcdfdee84e
   subpackages:
   - doc
 - name: github.com/spf13/pflag
-  version: 749bb7a3c5f1eec9dd082d85f3e07fd4f6f3f8a9
+  version: 053854db78bf52e52733c395a5315647ad1e110e
   repo: https://github.com/appscode/pflag.git
   vcs: git
 - name: github.com/tamalsaha/go-oneliners

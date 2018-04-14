@@ -10,7 +10,6 @@ import (
 	"github.com/soter/scanner/pkg/scanner"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
@@ -61,7 +60,7 @@ func (c *ScannerController) CheckContainers(
 	namespace string, containers []corev1.Container, secretNames []string,
 	precache bool) (bool, error) {
 	for _, cont := range containers {
-		_, status, err := c.CheckImage(namespace, cont.Image, secretNames, precache)
+		_, _, status, err := c.CheckImage(namespace, cont.Image, secretNames, precache)
 		vulnerable := (status != scanner.NotVulnerableStatus)
 		if !precache && vulnerable {
 			return false, err
@@ -92,15 +91,12 @@ func (c *ScannerController) CheckContainers(
 // url="https://registry-1.docker.io/"
 func (c *ScannerController) CheckImage(
 	namespace, image string,
-	secretNames []string, precache bool) (scanner.Canonical1, int, error) {
+	secretNames []string, precache bool) ([]api.Feature, []api.Vulnerability, int, error) {
 
-	if (secretNames) == nil {
-		return scanner.Canonical1{}, 0, fmt.Errorf("empty SecretNames[]")
-	}
 	for _, item := range secretNames {
 		secret, err := c.KubeClient.CoreV1().Secrets(namespace).Get(item, metav1.GetOptions{})
 		if err != nil {
-			return scanner.Canonical1{}, GettingSecretError,
+			return []api.Feature{}, []api.Vulnerability{}, GettingSecretError,
 				fmt.Errorf("error in reading secret(%s): \n\t%v", item, err)
 		}
 
@@ -113,19 +109,19 @@ func (c *ScannerController) CheckImage(
 		var authInfo map[string]map[string]RegistrySecret
 		err = json.NewDecoder(bytes.NewReader(configData)).Decode(&authInfo)
 		if err != nil {
-			return scanner.Canonical1{}, DecodingConfigDataError,
+			return []api.Feature{}, []api.Vulnerability{}, DecodingConfigDataError,
 				fmt.Errorf("error in decoding configData of secret(%s): \n\t%v", item, err)
 		}
 
 		for _, authInfo := range authInfo {
 			for key, val := range authInfo {
-				imageManifest, status, err := scanner.IsVulnerable(
-					c.KubeClient, c.FsCache, c.VulsCache,
+				features, vulnerabilities, status, err := scanner.IsVulnerable(
+					c.KubeClient,
 					key, image, val.Username, val.Password,
 					precache,
 				)
 				if status > 4 {
-					return imageManifest, status, err
+					return features, vulnerabilities, status, err
 				}
 			}
 		}
@@ -135,66 +131,14 @@ func (c *ScannerController) CheckImage(
 	username := "" // anonymous
 	password := "" // anonymous
 
-	imageManifest, status, err := scanner.IsVulnerable(
-		c.KubeClient, c.FsCache, c.VulsCache,
+	features, vulnerabilities, status, err := scanner.IsVulnerable(
+		c.KubeClient,
 		registryUrl, image, username, password,
 		precache,
 	)
 	if status < 5 {
-		return imageManifest, status, fmt.Errorf("error in secrets for image(%s): %v", image, err)
+		return features, vulnerabilities, status, fmt.Errorf("error in secrets for image(%s): %v", image, err)
 	}
 
-	return imageManifest, status, err
-}
-
-type Feature map[api.Feature]struct{}
-type Vulnerability map[api.Vulnerability]struct{}
-
-func (c *ScannerController) GetImageReview(imageManifest scanner.Canonical1) ([]api.Feature, []api.Vulnerability) {
-	var (
-		fs        []api.Feature
-		fsNameSet = sets.NewString()
-		fsSet     = Feature{}
-
-		vuls        []api.Vulnerability
-		vulsNameSet = sets.NewString()
-		vulsSet     = Vulnerability{}
-	)
-
-	for _, layer := range imageManifest.Layers {
-		key := scanner.HashPart(imageManifest.Config.Digest) + scanner.HashPart(layer.Digest)
-
-		valF, _ := c.FsCache.Get(key)
-		fs1 := valF.([]api.Feature)
-		if len(fs1) > 0 {
-			for _, f := range fs1 {
-				name := f.Name + f.NamespaceName + f.Version
-				if !fsNameSet.Has(name) {
-					fsNameSet.Insert(name)
-					fsSet[f] = struct{}{}
-				}
-			}
-		}
-
-		valV, _ := c.VulsCache.Get(key)
-		vuls1 := valV.([]api.Vulnerability)
-		if len(vuls1) > 0 {
-			for _, v := range vuls1 {
-				name := v.Name + v.NamespaceName
-				if !vulsNameSet.Has(name) {
-					vulsNameSet.Insert(name)
-					vulsSet[v] = struct{}{}
-				}
-			}
-		}
-	}
-
-	for f := range fsSet {
-		fs = append(fs, f)
-	}
-	for v := range vulsSet {
-		vuls = append(vuls, v)
-	}
-
-	return fs, vuls
+	return features, vulnerabilities, status, err
 }
