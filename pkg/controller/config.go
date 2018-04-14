@@ -10,7 +10,6 @@ import (
 )
 
 type Config struct {
-	EnableRBAC      bool
 	ScannerImageTag string
 	DockerRegistry  string
 	MaxNumRequeues  int

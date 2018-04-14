@@ -9,9 +9,8 @@ import (
 )
 
 type ControllerOptions struct {
-	QPS        float64
-	Burst      int
-	EnableRBAC bool
+	QPS   float64
+	Burst int
 }
 
 func NewControllerOptions() *ControllerOptions {
@@ -24,8 +23,6 @@ func NewControllerOptions() *ControllerOptions {
 func (s *ControllerOptions) AddGoFlags(fs *flag.FlagSet) {
 	fs.Float64Var(&s.QPS, "qps", s.QPS, "The maximum QPS to the master from this client")
 	fs.IntVar(&s.Burst, "burst", s.Burst, "The maximum burst for throttle")
-
-	fs.BoolVar(&s.EnableRBAC, "rbac", s.EnableRBAC, "Enable RBAC for operator")
 }
 
 func (s *ControllerOptions) AddFlags(fs *pflag.FlagSet) {
@@ -39,7 +36,6 @@ func (s *ControllerOptions) ApplyTo(cfg *controller.ControllerConfig) error {
 
 	cfg.ClientConfig.QPS = float32(s.QPS)
 	cfg.ClientConfig.Burst = s.Burst
-	cfg.EnableRBAC = s.EnableRBAC
 
 	if cfg.KubeClient, err = kubernetes.NewForConfig(cfg.ClientConfig); err != nil {
 		return err
