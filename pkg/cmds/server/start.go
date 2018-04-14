@@ -59,6 +59,7 @@ func (o ScannerOptions) Config() (*server.ScannerConfig, error) {
 	if err := o.RecommendedOptions.ApplyTo(serverConfig); err != nil {
 		return nil, err
 	}
+	serverConfig.EnableMetrics = true
 
 	controllerConfig := controller.NewControllerConfig(serverConfig.ClientConfig)
 	if err := o.ControllerOptions.ApplyTo(controllerConfig); err != nil {
