@@ -1,62 +1,19 @@
 package scanner
 
 import (
-	"bytes"
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/coreos/clair/api/v3/clairpb"
+	manifestV1 "github.com/docker/distribution/manifest/schema1"
+	manifestV2 "github.com/docker/distribution/manifest/schema2"
 	reg "github.com/heroku/docker-registry-client/registry"
+	"github.com/pkg/errors"
 	api "github.com/soter/scanner/apis/scanner/v1alpha1"
+	"github.com/tamalsaha/go-oneliners"
 	"k8s.io/client-go/kubernetes"
-)
-
-type config struct {
-	MediaType string
-	Size      int
-	Digest    string
-}
-
-type layer1 struct {
-	MediaType string
-	Size      int
-	Digest    string
-}
-
-type Canonical1 struct {
-	SchemaVersion int
-	MediaType     string
-	Config        config
-	Layers        []layer1
-}
-
-type Canonical2 struct {
-	SchemaVersion int
-	FsLayers      []layer2
-}
-
-type layer2 struct {
-	BlobSum string
-}
-
-const (
-	ParseImageNameError          = 3
-	GettingManifestError         = 4
-	GettingCannonicalError       = 5
-	DecodingCannonical_1_Error   = 6
-	DecodingCannonical_2_Error   = 7
-	PullingLayersError           = 8
-	BearerTokenRequestError      = 9
-	BearerTokenResponseError     = 10
-	GettingClairAddrError        = 11
-	SendingLayerRequestError     = 12
-	SendingLayerError            = 13
-	VulnerabilitiesRequestError  = 14
-	VulnerabilitiesResponseError = 15
-	VulnerableStatus             = 16
-	NotVulnerableStatus          = 17
 )
 
 // This method takes <registryUrl>, <imageName>, <username>, <password> and
@@ -72,25 +29,12 @@ const (
 // will be helpful.
 func IsVulnerable(
 	kc kubernetes.Interface,
-	registryUrl, imageName, username, password string) ([]api.Feature, []api.Vulnerability, int, error) {
-
-	client := http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: false, //true
-			},
-		},
-		Timeout: time.Minute,
-	}
-
-	clairClient := http.Client{
-		Timeout: time.Minute,
-	}
+	registryUrl, imageName, username, password string) ([]api.Feature, []api.Vulnerability, error) {
 
 	// TODO: need to check for digest part
 	registryUrl, repo, tag, _, err := parseImageName(imageName, registryUrl)
 	if err != nil {
-		return []api.Feature{}, []api.Vulnerability{}, ParseImageNameError, err
+		return nil, nil, WithCode(err, ParseImageNameError)
 	}
 
 	hub := &reg.Registry{
@@ -100,111 +44,94 @@ func IsVulnerable(
 		},
 		Logf: reg.Quiet,
 	}
-
-	manifest, err := hub.ManifestV2(repo, tag)
+	mx, err := hub.ManifestVx(repo, tag)
 	if err != nil {
-		return []api.Feature{}, []api.Vulnerability{}, GettingManifestError,
-			fmt.Errorf("error in getting manifest for image(%s): %v\n", imageName, err)
+		return nil, nil, WithCode(errors.Wrapf(err, "failed to retrieve manifest for image %s", imageName), GettingManifestError)
 	}
-	canonicalBytes, err := manifest.MarshalJSON()
+
+	req, err := requestBearerToken(repo, username, password)
 	if err != nil {
-		return []api.Feature{}, []api.Vulnerability{}, GettingCannonicalError,
-			fmt.Errorf("error in getting manifest.canonical for image(%s): %v\n", imageName, err)
+		return nil, nil, WithCode(errors.Wrapf(err, "failed to create BearerToken request for image %s", imageName), BearerTokenRequestError)
+	}
+	client := http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: false, //true
+			},
+		},
+		Timeout: time.Minute,
+	}
+	token, err := getBearerToken(client.Do(req))
+	if err != nil {
+		return nil, nil, WithCode(errors.Wrapf(err, "failed to get BearerToken for image %s", imageName), BearerTokenResponseError)
 	}
 
-	var imageManifest Canonical1
-	if err := json.NewDecoder(bytes.NewReader(canonicalBytes)).Decode(&imageManifest); err != nil {
-		return []api.Feature{}, []api.Vulnerability{}, DecodingCannonical_1_Error,
-			fmt.Errorf("error in decoding into canonical1 for image(%s): %v\n", imageName, err)
+	postAncestryRequest := &clairpb.PostAncestryRequest{
+		AncestryName: repo,
+		Format:       "Docker",
 	}
-
-	if imageManifest.Layers == nil {
-		var image2 Canonical2
-		if err := json.NewDecoder(bytes.NewReader(canonicalBytes)).Decode(&image2); err != nil {
-			return []api.Feature{}, []api.Vulnerability{}, DecodingCannonical_2_Error,
-				fmt.Errorf("error in decoding into canonical2 for image(%s): %v\n", imageName, err)
+	switch manifest := mx.(type) {
+	case *manifestV2.DeserializedManifest:
+		layers := make([]*clairpb.PostAncestryRequest_PostLayer, len(manifest.Layers))
+		for i, layer := range manifest.Layers {
+			layers[i] = &clairpb.PostAncestryRequest_PostLayer{
+				Hash:    hashPart(manifest.Config.Digest.String()) + hashPart(layer.Digest.String()),
+				Path:    fmt.Sprintf("%s/%s/%s/%s", registryUrl, repo, "blobs", layer.Digest.String()),
+				Headers: map[string]string{"Authorization": token},
+			}
 		}
-
-		imageManifest.Layers = make([]layer1, len(image2.FsLayers))
-		for i, l := range image2.FsLayers {
-			imageManifest.Layers[len(image2.FsLayers)-1-i].Digest = l.BlobSum
+		postAncestryRequest.Layers = layers
+	case *manifestV1.SignedManifest:
+		layers := make([]*clairpb.PostAncestryRequest_PostLayer, len(manifest.FSLayers))
+		for i, layer := range manifest.FSLayers {
+			layers[len(manifest.FSLayers)-1-i] = &clairpb.PostAncestryRequest_PostLayer{
+				Hash:    hashPart(layer.BlobSum.String()),
+				Path:    fmt.Sprintf("%s/%s/%s/%s", registryUrl, repo, "blobs", layer.BlobSum.String()),
+				Headers: map[string]string{"Authorization": token},
+			}
 		}
-		imageManifest.SchemaVersion = image2.SchemaVersion
+		postAncestryRequest.Layers = layers
+	default:
+		return nil, nil, WithCode(errors.New("unknown manifest type"), UnknownManifestError)
 	}
 
-	req, _ := requestBearerToken(repo, username, password)
-	if err != nil {
-		return []api.Feature{}, []api.Vulnerability{}, BearerTokenRequestError,
-			fmt.Errorf("error in creating BearerToken request for image(%s): %v\n", imageName, err)
-	}
+	// TODO: need to remove the following line
+	oneliners.PrettyJson(postAncestryRequest, imageName)
 
-	token, err := getBearerToken(
-		client.Do(req),
-	)
-	if err != nil {
-		return []api.Feature{}, []api.Vulnerability{}, BearerTokenResponseError,
-			fmt.Errorf("error in getting BearerToken response for image(%s): %v\n", imageName, err)
-	}
-
-	clairAddr, err := getAddress(kc)
-	if err != nil {
-		return []api.Feature{}, []api.Vulnerability{}, GettingClairAddrError,
-			fmt.Errorf("error in getting ClairAddr for image(%s): %v", imageName, err)
-	}
-
-	var parent string
-	layersLen := len(imageManifest.Layers)
+	layersLen := len(postAncestryRequest.Layers)
 	if layersLen == 0 {
-		return []api.Feature{}, []api.Vulnerability{}, PullingLayersError,
-			fmt.Errorf("error is pulling fsLayers for image(%s)\n", imageName)
+		return nil, nil, WithCode(errors.Wrapf(err, "failed to pull Layers for image %s", imageName), PullingLayersError)
 	} else {
 		fmt.Println("Analysing", layersLen, "layers")
 	}
-	for i := 0; i < layersLen; i++ {
-		l := &LayerType{
-			Name:       HashPart(imageManifest.Config.Digest) + HashPart(imageManifest.Layers[i].Digest),
-			Path:       fmt.Sprintf("%s/%s/%s/%s", registryUrl+"/v2", repo, "blobs", imageManifest.Layers[i].Digest),
-			ParentName: parent,
-			Format:     "Docker",
-			Headers: HeadersType{
-				Authorization: token,
-			},
-		}
-		parent = l.Name
 
-		req, err := requestSendingLayer(l, clairAddr)
-		if err != nil {
-			return []api.Feature{}, []api.Vulnerability{}, SendingLayerRequestError,
-				fmt.Errorf("error in creating SendingLayerRequest for %dth layer of image(%s): %v\n", i, imageName, err)
-		}
-		_, err = clairClient.Do(req)
-		if err != nil {
-			return []api.Feature{}, []api.Vulnerability{}, SendingLayerError,
-				fmt.Errorf("error in sending %dth layer of image(%s): %v\n", i, imageName, err)
-		}
-	}
-
-	req, err = requestVulnerabilities(
-		HashPart(imageManifest.Config.Digest)+HashPart(imageManifest.Layers[layersLen-1].Digest), clairAddr,
-	)
+	clairAddress, err := getAddress(kc)
 	if err != nil {
-		return []api.Feature{}, []api.Vulnerability{}, VulnerabilitiesRequestError,
-			fmt.Errorf("error in creating VulnerabilitiesRequest for image(%s): %v\n", imageName, err)
+		return nil, nil, WithCode(errors.Wrapf(err, "failed to get ClairAddr for image %s", imageName), GettingClairAddressError)
 	}
 
-	layerObj, err := decode(clairClient.Do(req))
+	clairClient, err := clairClientSetup(clairAddress)
 	if err != nil {
-		return []api.Feature{}, []api.Vulnerability{}, VulnerabilitiesResponseError,
-			fmt.Errorf("error in decoding VulnerabilitiesResponse for image(%s): %v\n", imageName, err)
+		return nil, nil, WithCode(errors.Wrapf(err, "failed to connect"), ConnectingClairClientError)
 	}
 
-	features := getFeatures(layerObj)
-	vulnerabilities := getVulnerabilities(layerObj)
+	err = sendLayer(postAncestryRequest, clairClient)
+	if err != nil {
+		return nil, nil, WithCode(errors.Wrapf(err, "failed to send layers for image %s", imageName), PostAncestryError)
+	}
+
+	features, vulnerabilities, err := getLayer(imageName, clairClient)
+	if err != nil {
+		return nil, nil, WithCode(errors.Wrapf(err, "failed to get features and vulnerabilities for image %s", imageName), GetAncestryError)
+	}
+
+	// TODO: need to remove the following two lines
+	oneliners.PrettyJson(features)
+	oneliners.PrettyJson(vulnerabilities)
 
 	if vulnerabilities != nil {
-		return features, vulnerabilities, VulnerableStatus,
-			fmt.Errorf("Image(%s) contains vulnerabilities", imageName)
+		return features, vulnerabilities, WithCode(errors.Errorf("Image %s contains vulnerabilities", imageName), VulnerableStatus)
 	}
 
-	return features, vulnerabilities, NotVulnerableStatus, nil
+	return features, vulnerabilities, WithCode(nil, NotVulnerableStatus)
 }

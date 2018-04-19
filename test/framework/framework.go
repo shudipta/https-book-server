@@ -25,7 +25,7 @@ func New(kubeClient kubernetes.Interface, kaClient ka.Interface, webhookEnabled 
 func (f *Framework) Invoke() *Invocation {
 	return &Invocation{
 		Framework: f,
-		app:       rand.WithUniqSuffix("test-scanner"),
+		app:       "test-scanner", //rand.WithUniqSuffix("test-scanner"),
 	}
 }
 

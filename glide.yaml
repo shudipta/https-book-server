@@ -6,39 +6,31 @@ import:
   version: release-6.0
 - package: github.com/appscode/kutil
   version: release-6.0
-- package: github.com/appscode/pat
-- package: github.com/cenkalti/backoff
-  version: v1.1.0
 - package: github.com/codeskyblue/go-sh
   version: master
+- package: github.com/coreos/etcd
+  version: v3.2.18
+- package: github.com/coreos/clair
+  version: a5b3e747a0bffd13929bcbea5bd1d6495cf9f64b
+- package: github.com/grpc-ecosystem/grpc-gateway
+  version: v1.3.1
+- package: github.com/go-openapi/spec
 - package: github.com/golang/glog
-- package: github.com/hashicorp/go-version
-  repo: https://github.com/appscode/go-version.git
-  vcs: git
+- package: github.com/heroku/docker-registry-client
+  repo: https://github.com/appscode/docker-registry-client
   version: master
 - package: github.com/jpillora/go-ogle-analytics
 - package: github.com/onsi/ginkgo
-  version: v1.4.0
 - package: github.com/onsi/gomega
-  version: v1.3.0
-- package: github.com/pkg/errors
-  version: v0.8.0
-- package: github.com/prometheus/client_golang
-  version: v0.8.0
-- package: github.com/spf13/afero
-  version: v1.0.2
 - package: github.com/spf13/cobra
   version: master
 - package: github.com/spf13/pflag
   repo: https://github.com/appscode/pflag.git
   vcs: git
   version: master
-- package: gopkg.in/ini.v1
-  version: v1.33.0
-- package: gopkg.in/robfig/cron.v2
-  repo: https://github.com/appscode/cron.git
-  vcs: git
-  version: v2
+- package: github.com/tamalsaha/go-oneliners
+- package: google.golang.org/grpc
+  version: v1.7.5
 - package: k8s.io/api
   version: kubernetes-1.9.0
 - package: k8s.io/apiextensions-apiserver

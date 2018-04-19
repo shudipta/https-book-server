@@ -220,9 +220,9 @@ func (f *Invocation) NewWorkload(
 }
 
 func (f *Invocation) EventuallyCreateWithVulnerableImage(root *Framework, obj runtime.Object) GomegaAsyncAssertion {
-	err := workload.Create(root.KubeClient, obj)
 	return Eventually(
 		func() bool {
+			err := workload.Create(root.KubeClient, obj)
 			Expect(err).To(HaveOccurred())
 
 			return strings.Contains(err.Error(), "contains vulnerabilities")

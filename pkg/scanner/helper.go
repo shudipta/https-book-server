@@ -1,14 +1,17 @@
 package scanner
 
 import (
-	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/coreos/clair/api/v3/clairpb"
 	api "github.com/soter/scanner/apis/scanner/v1alpha1"
+	"google.golang.org/grpc"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/pkg/util/parsers"
@@ -74,72 +77,34 @@ func getAddress(kubeClient kubernetes.Interface) (string, error) {
 	return "", fmt.Errorf("clair isn't running")
 }
 
-func requestSendingLayer(l *LayerType, clairAddr string) (*http.Request, error) {
-	var layerApi struct {
-		Layer *LayerType
-	}
-	layerApi.Layer = l
-	reqBody, err := json.Marshal(layerApi)
-	if err != nil {
-		return nil, err
-	}
-	url := clairAddr + "/v1/layers"
-
-	req, err := http.NewRequest("POST", url, bytes.NewReader(reqBody))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	return req, nil
-}
-
-func requestVulnerabilities(hashNameOfImage, clairAddr string) (*http.Request, error) {
-	url := clairAddr + "/v1/layers/" + hashNameOfImage + "?vulnerabilities"
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-type layerApi struct {
-	Layer *LayerType
-}
-
-func decode(resp *http.Response, err error) (layerApi, error) {
-	if err != nil {
-		return layerApi{}, err
-	}
-	defer resp.Body.Close()
-
-	var layerObj layerApi
-	err = json.NewDecoder(resp.Body).Decode(&layerObj)
-	if err != nil {
-		return layerApi{}, err
-	} else if layerObj.Layer == nil {
-		return layerApi{}, fmt.Errorf("clair returned empty layerObj")
-	}
-
-	return layerObj, nil
-}
-
-func getVulnerabilities(layerObj layerApi) []api.Vulnerability {
+func getVulnerabilities(res *clairpb.GetAncestryResponse) []api.Vulnerability {
+	//return nil
 	var vuls []api.Vulnerability
-	for _, feature := range layerObj.Layer.Features {
+	for _, feature := range res.Ancestry.Features {
 		for _, vul := range feature.Vulnerabilities {
-			vuls = append(vuls, vul)
+			vuls = append(vuls, api.Vulnerability{
+				Name:          vul.Name,
+				NamespaceName: vul.NamespaceName,
+				Description:   vul.Description,
+				Link:          vul.Link,
+				Severity:      vul.Severity,
+				FixedBy:       vul.FixedBy,
+				FeatureName:   feature.Name,
+			})
 		}
 	}
 
 	return vuls
 }
 
-func getFeatures(layerObj layerApi) []api.Feature {
+func getFeaturs(res *clairpb.GetAncestryResponse) []api.Feature {
 	var fs []api.Feature
-	for _, feature := range layerObj.Layer.Features {
-		fs = append(fs, api.Feature{feature.Name, feature.NamespaceName, feature.Version})
+	for _, feature := range res.Ancestry.Features {
+		fs = append(fs, api.Feature{
+			Name:          feature.Name,
+			NamespaceName: feature.NamespaceName,
+			Version:       feature.Version,
+		})
 	}
 
 	return fs
@@ -170,10 +135,45 @@ func parseImageName(imageName, registryUrl string) (string, string, string, stri
 	return registryUrl, repo, tag, digest, err
 }
 
-func HashPart(digest string) string {
+func hashPart(digest string) string {
 	if len(digest) < 7 {
 		return ""
 	}
 
 	return digest[7:]
+}
+
+func clairClientSetup(clairAddress string) (clairpb.AncestryServiceClient, error) {
+	conn, err := grpc.Dial(clairAddress, grpc.WithInsecure())
+	if err != nil {
+		return nil, err
+	}
+
+	c := clairpb.NewAncestryServiceClient(conn)
+	return c, nil
+}
+
+func sendLayer(postAncestryRequest *clairpb.PostAncestryRequest, clairClient clairpb.AncestryServiceClient) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+	_, err := clairClient.PostAncestry(ctx, postAncestryRequest)
+
+	return err
+}
+
+func getLayer(
+	repo string, clairClient clairpb.AncestryServiceClient) ([]api.Feature, []api.Vulnerability, error) {
+	req := &clairpb.GetAncestryRequest{
+		AncestryName:        repo,
+		WithFeatures:        true,
+		WithVulnerabilities: true,
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+	resp, err := clairClient.GetAncestry(ctx, req)
+	if err != nil {
+		return []api.Feature{}, []api.Vulnerability{}, err
+	}
+
+	return getFeaturs(resp), getVulnerabilities(resp), nil
 }

@@ -170,7 +170,7 @@ var _ = Describe("Image Scanner", func() {
 			f.DeleteAllSecrets()
 		})
 
-		Context("Creating Deployment with some vulnerable images", func() {
+		FContext("Creating Deployment with some vulnerable images", func() {
 			ctx1(&apps.Deployment{})
 		})
 

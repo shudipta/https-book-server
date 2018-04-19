@@ -3,18 +3,13 @@ package controller
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 
 	workload "github.com/appscode/kubernetes-webhook-util/workload/v1"
+	"github.com/pkg/errors"
 	api "github.com/soter/scanner/apis/scanner/v1alpha1"
 	"github.com/soter/scanner/pkg/scanner"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-const (
-	GettingSecretError      = 1
-	DecodingConfigDataError = 2
 )
 
 type RegistrySecret struct {
@@ -55,8 +50,8 @@ func (c *ScannerController) CheckWorkload(w *workload.Workload) (*workload.Workl
 func (c *ScannerController) CheckContainers(
 	namespace string, containers []corev1.Container, secretNames []string) (bool, error) {
 	for _, cont := range containers {
-		_, _, status, err := c.CheckImage(namespace, cont.Image, secretNames)
-		vulnerable := status != scanner.NotVulnerableStatus
+		_, _, err := c.CheckImage(namespace, cont.Image, secretNames)
+		vulnerable := err.(*scanner.ErrorWithCode).Code() != scanner.NotVulnerableStatus
 		if vulnerable {
 			return false, err
 		}
@@ -85,13 +80,12 @@ func (c *ScannerController) CheckContainers(
 // url="https://registry-1.docker.io/"
 func (c *ScannerController) CheckImage(
 	namespace, image string,
-	secretNames []string) ([]api.Feature, []api.Vulnerability, int, error) {
+	secretNames []string) ([]api.Feature, []api.Vulnerability, error) {
 
 	for _, item := range secretNames {
 		secret, err := c.KubeClient.CoreV1().Secrets(namespace).Get(item, metav1.GetOptions{})
 		if err != nil {
-			return []api.Feature{}, []api.Vulnerability{}, GettingSecretError,
-				fmt.Errorf("error in reading secret(%s): \n\t%v", item, err)
+			return nil, nil, scanner.WithCode(errors.Wrapf(err, "failed to read secret %s", item), scanner.GettingSecretError)
 		}
 
 		var configData []byte
@@ -103,34 +97,28 @@ func (c *ScannerController) CheckImage(
 		var authInfo map[string]map[string]RegistrySecret
 		err = json.NewDecoder(bytes.NewReader(configData)).Decode(&authInfo)
 		if err != nil {
-			return []api.Feature{}, []api.Vulnerability{}, DecodingConfigDataError,
-				fmt.Errorf("error in decoding configData of secret(%s): \n\t%v", item, err)
+			return nil, nil, scanner.WithCode(errors.Wrapf(err, "failed to decode configData of secret %s", item), scanner.DecodingConfigDataError)
 		}
 
 		for _, authInfo := range authInfo {
 			for key, val := range authInfo {
-				features, vulnerabilities, status, err := scanner.IsVulnerable(
-					c.KubeClient,
-					key, image, val.Username, val.Password,
-				)
-				if status > 4 {
-					return features, vulnerabilities, status, err
+				features, vulnerabilities, err := scanner.IsVulnerable(c.KubeClient, key, image, val.Username, val.Password)
+				if err.(*scanner.ErrorWithCode).Code() > scanner.GettingManifestError {
+					return features, vulnerabilities, err
 				}
 			}
 		}
 	}
 
-	registryUrl := "https://registry-1.docker.io/"
+	registryUrl := "https://registry-1.docker.io"
 	username := "" // anonymous
 	password := "" // anonymous
 
-	features, vulnerabilities, status, err := scanner.IsVulnerable(
-		c.KubeClient,
-		registryUrl, image, username, password,
-	)
-	if status < 5 {
-		return features, vulnerabilities, status, fmt.Errorf("error in secrets for image(%s): %v", image, err)
+	features, vulnerabilities, err := scanner.IsVulnerable(c.KubeClient, registryUrl, image, username, password)
+	imageErr := err.(*scanner.ErrorWithCode)
+	if imageErr.Code() < scanner.BearerTokenRequestError {
+		return features, vulnerabilities, scanner.WithCode(errors.Wrap(err, "incorrect secrets"), imageErr.Code())
 	}
 
-	return features, vulnerabilities, status, err
+	return features, vulnerabilities, err
 }

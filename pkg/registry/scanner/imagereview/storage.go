@@ -45,8 +45,9 @@ func (r *REST) Create(ctx apirequest.Context, obj runtime.Object, _ rest.Validat
 	ns := apirequest.NamespaceValue(ctx)
 	secretNames := controller.GetAllSecrets(req.Request.ImagePullSecrets)
 
-	features, vulnerabilities, status, err := r.controller.CheckImage(ns, req.Request.Image, secretNames)
-	if status != scanner.VulnerableStatus && status != scanner.NotVulnerableStatus {
+	features, vulnerabilities, err := r.controller.CheckImage(ns, req.Request.Image, secretNames)
+	if err.(*scanner.ErrorWithCode).Code() != scanner.VulnerableStatus &&
+		err.(*scanner.ErrorWithCode).Code() != scanner.NotVulnerableStatus {
 		return nil, err
 	}
 
