@@ -47,7 +47,7 @@ var _ = BeforeSuite(func() {
 	By("Using test namespace " + root.Namespace())
 
 	go root.StartAPIServerAndOperator(options.KubeConfig, options.ControllerOptions)
-	root.EventuallyAPIServerReady("v1alpha1.admission.scanner.soter.cloud").Should(Succeed())
+	root.EventuallyAPIServerReady("v1alpha1.admission.scanner.soter.ac").Should(Succeed())
 	// let's API server be warmed up
 	time.Sleep(time.Second * 5)
 })
@@ -55,10 +55,10 @@ var _ = BeforeSuite(func() {
 var _ = AfterSuite(func() {
 	if options.StartAPIServer {
 		By("Cleaning API server and Webhook stuff")
-		root.KubeClient.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Delete("admission.scanner.soter.cloud", meta.DeleteInBackground())
+		root.KubeClient.AdmissionregistrationV1beta1().ValidatingWebhookConfigurations().Delete("admission.scanner.soter.ac", meta.DeleteInBackground())
 		root.KubeClient.CoreV1().Endpoints(root.Namespace()).Delete("scanner-local-apiserver", meta.DeleteInBackground())
 		root.KubeClient.CoreV1().Services(root.Namespace()).Delete("scanner-local-apiserver", meta.DeleteInBackground())
-		root.KAClient.ApiregistrationV1beta1().APIServices().Delete("v1alpha1.admission.scanner.soter.cloud", meta.DeleteInBackground())
+		root.KAClient.ApiregistrationV1beta1().APIServices().Delete("v1alpha1.admission.scanner.soter.ac", meta.DeleteInBackground())
 	}
 	root.DeleteNamespace()
 })

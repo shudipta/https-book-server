@@ -2,19 +2,19 @@
 apiVersion: admissionregistration.k8s.io/v1beta1
 kind: ValidatingWebhookConfiguration
 metadata:
-  name: admission.scanner.soter.cloud
+  name: admission.scanner.soter.ac
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     app: "{{ template "scanner.name" . }}"
     heritage: "{{ .Release.Service }}"
     release: "{{ .Release.Name }}"
 webhooks:
-- name: deployment.admission.scanner.soter.cloud
+- name: deployment.admission.scanner.soter.ac
   clientConfig:
     service:
       namespace: default
       name: kubernetes
-      path: /apis/admission.scanner.soter.cloud/v1alpha1/deployments
+      path: /apis/admission.scanner.soter.ac/v1alpha1/deployments
     caBundle: {{ b64enc .Values.apiserver.ca }}
   rules:
   - operations:
@@ -28,12 +28,12 @@ webhooks:
     resources:
     - deployments
   failurePolicy: Fail
-- name: daemonset.admission.scanner.soter.cloud
+- name: daemonset.admission.scanner.soter.ac
   clientConfig:
     service:
       namespace: default
       name: kubernetes
-      path: /apis/admission.scanner.soter.cloud/v1alpha1/daemonsets
+      path: /apis/admission.scanner.soter.ac/v1alpha1/daemonsets
     caBundle: {{ b64enc .Values.apiserver.ca }}
   rules:
   - operations:
@@ -47,12 +47,12 @@ webhooks:
     resources:
     - daemonsets
   failurePolicy: Fail
-- name: statefulset.admission.scanner.soter.cloud
+- name: statefulset.admission.scanner.soter.ac
   clientConfig:
     service:
       namespace: default
       name: kubernetes
-      path: /apis/admission.scanner.soter.cloud/v1alpha1/statefulsets
+      path: /apis/admission.scanner.soter.ac/v1alpha1/statefulsets
     caBundle: {{ b64enc .Values.apiserver.ca }}
   rules:
   - operations:
@@ -65,12 +65,12 @@ webhooks:
     resources:
     - statefulsets
   failurePolicy: Fail
-- name: replicationcontroller.admission.scanner.soter.cloud
+- name: replicationcontroller.admission.scanner.soter.ac
   clientConfig:
     service:
       namespace: default
       name: kubernetes
-      path: /apis/admission.scanner.soter.cloud/v1alpha1/replicationcontrollers
+      path: /apis/admission.scanner.soter.ac/v1alpha1/replicationcontrollers
     caBundle: {{ b64enc .Values.apiserver.ca }}
   rules:
   - operations:
@@ -83,12 +83,12 @@ webhooks:
     resources:
     - replicationcontrollers
   failurePolicy: Fail
-- name: replicaset.admission.scanner.soter.cloud
+- name: replicaset.admission.scanner.soter.ac
   clientConfig:
     service:
       namespace: default
       name: kubernetes
-      path: /apis/admission.scanner.soter.cloud/v1alpha1/replicasets
+      path: /apis/admission.scanner.soter.ac/v1alpha1/replicasets
     caBundle: {{ b64enc .Values.apiserver.ca }}
   rules:
   - operations:
@@ -102,12 +102,12 @@ webhooks:
     resources:
     - replicasets
   failurePolicy: Fail
-- name: job.admission.scanner.soter.cloud
+- name: job.admission.scanner.soter.ac
   clientConfig:
     service:
       namespace: default
       name: kubernetes
-      path: /apis/admission.scanner.soter.cloud/v1alpha1/jobs
+      path: /apis/admission.scanner.soter.ac/v1alpha1/jobs
     caBundle: {{ b64enc .Values.apiserver.ca }}
   rules:
   - operations:
@@ -120,12 +120,12 @@ webhooks:
     resources:
     - jobs
   failurePolicy: Fail
-- name: cronjob.admission.scanner.soter.cloud
+- name: cronjob.admission.scanner.soter.ac
   clientConfig:
     service:
       namespace: default
       name: kubernetes
-      path: /apis/admission.scanner.soter.cloud/v1alpha1/cronjobs
+      path: /apis/admission.scanner.soter.ac/v1alpha1/cronjobs
     caBundle: {{ b64enc .Values.apiserver.ca }}
   rules:
   - operations:

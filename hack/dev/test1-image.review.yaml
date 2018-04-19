@@ -1,4 +1,4 @@
-apiVersion: scanner.soter.cloud/v1alpha1
+apiVersion: scanner.soter.ac/v1alpha1
 kind: ImageReview
 metadata:
   name: test

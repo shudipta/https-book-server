@@ -6,14 +6,14 @@
 apiVersion: apiregistration.k8s.io/v1beta1
 kind: APIService
 metadata:
-  name: v1alpha1.admission.scanner.soter.cloud
+  name: v1alpha1.admission.scanner.soter.ac
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     app: "{{ template "scanner.name" . }}"
     heritage: "{{ .Release.Service }}"
     release: "{{ .Release.Name }}"
 spec:
-  group: admission.scanner.soter.cloud
+  group: admission.scanner.soter.ac
   version: v1alpha1
   service:
     namespace: {{ .Release.Namespace }}

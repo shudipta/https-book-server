@@ -44,7 +44,7 @@
         }
       }
     },
-    "/apis/scanner.soter.cloud/": {
+    "/apis/scanner.soter.ac/": {
       "get": {
         "description": "get information of a group",
         "consumes": [
@@ -61,9 +61,9 @@
           "https"
         ],
         "tags": [
-          "scannerSoterCloud"
+          "scannerSoterAc"
         ],
-        "operationId": "getScannerSoterCloudAPIGroup",
+        "operationId": "getScannerSoterAcAPIGroup",
         "responses": {
           "200": {
             "description": "OK",
@@ -74,7 +74,7 @@
         }
       }
     },
-    "/apis/scanner.soter.cloud/v1alpha1/": {
+    "/apis/scanner.soter.ac/v1alpha1/": {
       "get": {
         "description": "get available resources",
         "consumes": [
@@ -91,9 +91,9 @@
           "https"
         ],
         "tags": [
-          "scannerSoterCloud_v1alpha1"
+          "scannerSoterAc_v1alpha1"
         ],
-        "operationId": "getScannerSoterCloudV1alpha1APIResources",
+        "operationId": "getScannerSoterAcV1alpha1APIResources",
         "responses": {
           "200": {
             "description": "OK",
@@ -104,7 +104,7 @@
         }
       }
     },
-    "/apis/scanner.soter.cloud/v1alpha1/namespaces/{namespace}/imagereviews": {
+    "/apis/scanner.soter.ac/v1alpha1/namespaces/{namespace}/imagereviews": {
       "post": {
         "description": "create an ImageReview",
         "consumes": [
@@ -119,9 +119,9 @@
           "https"
         ],
         "tags": [
-          "scannerSoterCloud_v1alpha1"
+          "scannerSoterAc_v1alpha1"
         ],
-        "operationId": "createScannerSoterCloudV1alpha1NamespacedImageReview",
+        "operationId": "createScannerSoterAcV1alpha1NamespacedImageReview",
         "parameters": [
           {
             "name": "body",
@@ -154,7 +154,7 @@
         },
         "x-kubernetes-action": "post",
         "x-kubernetes-group-version-kind": {
-          "group": "scanner.soter.cloud",
+          "group": "scanner.soter.ac",
           "version": "v1alpha1",
           "kind": "ImageReview"
         }
@@ -177,7 +177,7 @@
         }
       ]
     },
-    "/apis/scanner.soter.cloud/v1alpha1/namespaces/{namespace}/imagereviews/{name}": {
+    "/apis/scanner.soter.ac/v1alpha1/namespaces/{namespace}/imagereviews/{name}": {
       "delete": {
         "description": "delete an ImageReview",
         "consumes": [
@@ -192,9 +192,9 @@
           "https"
         ],
         "tags": [
-          "scannerSoterCloud_v1alpha1"
+          "scannerSoterAc_v1alpha1"
         ],
-        "operationId": "deleteScannerSoterCloudV1alpha1NamespacedImageReview",
+        "operationId": "deleteScannerSoterAcV1alpha1NamespacedImageReview",
         "responses": {
           "200": {
             "description": "OK",
@@ -205,7 +205,7 @@
         },
         "x-kubernetes-action": "delete",
         "x-kubernetes-group-version-kind": {
-          "group": "scanner.soter.cloud",
+          "group": "scanner.soter.ac",
           "version": "v1alpha1",
           "kind": "ImageReview"
         }
@@ -271,7 +271,7 @@
       },
       "x-kubernetes-group-version-kind": [
         {
-          "group": "scanner.soter.cloud",
+          "group": "scanner.soter.ac",
           "version": "v1alpha1",
           "kind": "ImageReview"
         }

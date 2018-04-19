@@ -20,5 +20,5 @@ limitations under the License.
 // +k8s:defaulter-gen=TypeMeta
 
 // Package v1alpha1 is the v1alpha1 version of the API.
-// +groupName=scanner.soter.cloud
+// +groupName=scanner.soter.ac
 package v1alpha1

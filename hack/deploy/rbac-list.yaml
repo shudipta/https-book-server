@@ -6,7 +6,7 @@ metadata:
     app: scanner
 rules:
 - apiGroups:
-  - soter.cloud
+  - soter.ac
   resources: ["*"]
   verbs: ["*"]
 - apiGroups:

@@ -27,9 +27,9 @@ type FakeImageReviews struct {
 	ns   string
 }
 
-var imagereviewsResource = schema.GroupVersionResource{Group: "scanner.soter.cloud", Version: "v1alpha1", Resource: "imagereviews"}
+var imagereviewsResource = schema.GroupVersionResource{Group: "scanner.soter.ac", Version: "v1alpha1", Resource: "imagereviews"}
 
-var imagereviewsKind = schema.GroupVersionKind{Group: "scanner.soter.cloud", Version: "v1alpha1", Kind: "ImageReview"}
+var imagereviewsKind = schema.GroupVersionKind{Group: "scanner.soter.ac", Version: "v1alpha1", Kind: "ImageReview"}
 
 // Create takes the representation of a imageReview and creates it.  Returns the server's representation of the imageReview, and an error, if there is any.
 func (c *FakeImageReviews) Create(imageReview *v1alpha1.ImageReview) (result *v1alpha1.ImageReview, err error) {

@@ -14,7 +14,7 @@ import (
 	genericoptions "k8s.io/apiserver/pkg/server/options"
 )
 
-const defaultEtcdPathPrefix = "/registry/soter.cloud"
+const defaultEtcdPathPrefix = "/registry/soter.ac"
 
 type ScannerOptions struct {
 	RecommendedOptions *genericoptions.RecommendedOptions
@@ -66,13 +66,13 @@ func (o ScannerOptions) Config() (*server.ScannerConfig, error) {
 	serverConfig.OpenAPIConfig.Info.Version = v1alpha1.SchemeGroupVersion.Version
 	serverConfig.OpenAPIConfig.IgnorePrefixes = []string{
 		"/swaggerapi",
-		"/apis/admission.scanner.soter.cloud/v1alpha1/deployments",
-		"/apis/admission.scanner.soter.cloud/v1alpha1/daemonsets",
-		"/apis/admission.scanner.soter.cloud/v1alpha1/statefulsets",
-		"/apis/admission.scanner.soter.cloud/v1alpha1/replicationcontrollers",
-		"/apis/admission.scanner.soter.cloud/v1alpha1/replicasets",
-		"/apis/admission.scanner.soter.cloud/v1alpha1/jobs",
-		"/apis/admission.scanner.soter.cloud/v1alpha1/cronjobs",
+		"/apis/admission.scanner.soter.ac/v1alpha1/deployments",
+		"/apis/admission.scanner.soter.ac/v1alpha1/daemonsets",
+		"/apis/admission.scanner.soter.ac/v1alpha1/statefulsets",
+		"/apis/admission.scanner.soter.ac/v1alpha1/replicationcontrollers",
+		"/apis/admission.scanner.soter.ac/v1alpha1/replicasets",
+		"/apis/admission.scanner.soter.ac/v1alpha1/jobs",
+		"/apis/admission.scanner.soter.ac/v1alpha1/cronjobs",
 	}
 
 	controllerConfig := controller.NewControllerConfig(serverConfig.ClientConfig)

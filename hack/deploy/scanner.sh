@@ -219,7 +219,7 @@ echo "waiting until scanner deployment is ready"
 $ONESSL wait-until-ready deployment scanner --namespace $SCANNER_NAMESPACE || { echo "Scanner deployment failed to be ready"; exit 1; }
 
 echo "waiting until scanner apiservice is available"
-$ONESSL wait-until-ready apiservice v1alpha1.admission.scanner.soter.cloud || { echo "Scanner apiservice failed to be ready"; exit 1; }
+$ONESSL wait-until-ready apiservice v1alpha1.admission.scanner.soter.ac || { echo "Scanner apiservice failed to be ready"; exit 1; }
 
 echo
 echo "Successfully installed Scanner!"

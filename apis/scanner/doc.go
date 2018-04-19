@@ -17,5 +17,5 @@ limitations under the License.
 // +k8s:deepcopy-gen=package
 
 // Package api is the internal version of the API.
-// +groupName=scanner.soter.cloud
+// +groupName=scanner.soter.ac
 package scanner

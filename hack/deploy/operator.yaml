@@ -82,12 +82,12 @@ spec:
 apiVersion: apiregistration.k8s.io/v1beta1
 kind: APIService
 metadata:
-  name: v1alpha1.admission.scanner.soter.cloud
+  name: v1alpha1.admission.scanner.soter.ac
   labels:
     app: scanner
 spec:
   caBundle: ${SERVICE_SERVING_CERT_CA}
-  group: admission.scanner.soter.cloud
+  group: admission.scanner.soter.ac
   groupPriorityMinimum: 1000
   versionPriority: 15
   service:

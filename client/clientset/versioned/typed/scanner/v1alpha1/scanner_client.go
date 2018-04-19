@@ -27,7 +27,7 @@ type ScannerV1alpha1Interface interface {
 	ImageReviewsGetter
 }
 
-// ScannerV1alpha1Client is used to interact with features provided by the scanner.soter.cloud group.
+// ScannerV1alpha1Client is used to interact with features provided by the scanner.soter.ac group.
 type ScannerV1alpha1Client struct {
 	restClient rest.Interface
 }
