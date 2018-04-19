@@ -78,7 +78,7 @@ show_help() {
     echo "    --docker-registry              docker registry used to pull scanner images (default: appscode)"
     echo "    --image-pull-secret            name of secret used to pull scanner operator images"
     echo "    --run-on-master                run scanner operator on master"
-    echo "    --enable-validating-webhook    enable/disable validating webhooks for Scanner CRDs"
+    echo "    --enable-validating-webhook    enable/disable validating webhooks for Scanner"
     echo "    --enable-analytics             send usage events to Google Analytics (default: true)"
     echo "    --uninstall                    uninstall scanner"
 }
