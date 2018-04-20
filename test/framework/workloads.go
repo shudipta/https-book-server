@@ -114,11 +114,10 @@ func newJob(
 	containers []core.Container, secret string) *batchv1.Job {
 
 	podTemplateSpec := newPodTemplateSpec(secret, labels, containers)
-	podTemplateSpec.Spec.RestartPolicy = "OnFailure"
+	podTemplateSpec.Spec.RestartPolicy = "Never"
 	return &batchv1.Job{
 		ObjectMeta: newObjectMeta(name, namespace, labels),
 		Spec: batchv1.JobSpec{
-			Selector: newSelector(labels),
 			Template: podTemplateSpec,
 		},
 	}
@@ -227,7 +226,7 @@ func (f *Invocation) EventuallyCreateWithVulnerableImage(root *Framework, obj ru
 
 			return strings.Contains(err.Error(), "contains vulnerabilities")
 		},
-		time.Minute*2,
+		time.Minute*5,
 		time.Millisecond*5,
 	)
 }
@@ -240,7 +239,7 @@ func (f *Invocation) EventuallyUpdateWithVulnerableImage(root *Framework, obj ru
 
 			return strings.Contains(err.Error(), "contains vulnerabilities")
 		},
-		time.Minute,
+		time.Minute*5,
 		time.Millisecond*5,
 	)
 }
@@ -250,7 +249,7 @@ func (f *Invocation) EventuallyCreateWithNonVulnerableImage(root *Framework, obj
 		func() error {
 			return workload.Create(root.KubeClient, obj)
 		},
-		time.Minute,
+		time.Minute*5,
 		time.Millisecond*5,
 	)
 }

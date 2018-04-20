@@ -51,7 +51,7 @@ func (c *ScannerController) CheckContainers(
 	namespace string, containers []corev1.Container, secretNames []string) (bool, error) {
 	for _, cont := range containers {
 		_, _, err := c.CheckImage(namespace, cont.Image, secretNames)
-		vulnerable := err.(*scanner.ErrorWithCode).Code() != scanner.NotVulnerableStatus
+		vulnerable := err != nil
 		if vulnerable {
 			return false, err
 		}
@@ -100,13 +100,12 @@ func (c *ScannerController) CheckImage(
 			return nil, nil, scanner.WithCode(errors.Wrapf(err, "failed to decode configData of secret %s", item), scanner.DecodingConfigDataError)
 		}
 
-		for _, authInfo := range authInfo {
-			for key, val := range authInfo {
-				features, vulnerabilities, err := scanner.IsVulnerable(c.KubeClient, key, image, val.Username, val.Password)
-				if err.(*scanner.ErrorWithCode).Code() > scanner.GettingManifestError {
-					return features, vulnerabilities, err
-				}
+		for key, val := range authInfo["auths"] {
+			features, vulnerabilities, err := scanner.IsVulnerable(c.KubeClient, key, image, val.Username, val.Password)
+			if err == nil || err.(*scanner.ErrorWithCode).Code() > scanner.GettingManifestError {
+				return features, vulnerabilities, err
 			}
+			break
 		}
 	}
 

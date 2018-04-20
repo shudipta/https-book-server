@@ -5,15 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/coreos/clair/api/v3/clairpb"
 	api "github.com/soter/scanner/apis/scanner/v1alpha1"
 	"google.golang.org/grpc"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/kubernetes/pkg/util/parsers"
 )
 
@@ -45,36 +42,6 @@ func getBearerToken(resp *http.Response, err error) (string, error) {
 		return "", err
 	}
 	return fmt.Sprintf("Bearer %s", token.Token), nil
-}
-
-func getAddress(kubeClient kubernetes.Interface) (string, error) {
-	var host, port string
-	pods, err := kubeClient.CoreV1().Pods("default").List(metav1.ListOptions{})
-	if err != nil {
-		return "", err
-	}
-	for _, pod := range pods.Items {
-		if strings.HasPrefix(pod.Name, "clair") {
-			host = pod.Status.HostIP
-		}
-	}
-
-	clairSvc, err := kubeClient.CoreV1().Services("default").Get("clairsvc", metav1.GetOptions{})
-	if err != nil {
-		return "", err
-	}
-	for _, p := range clairSvc.Spec.Ports {
-		if p.TargetPort.IntVal == 6060 {
-			port = strconv.Itoa(int(p.NodePort))
-			break
-		}
-	}
-
-	if host != "" && port != "" {
-		return "http://" + host + ":" + port, nil
-	}
-
-	return "", fmt.Errorf("clair isn't running")
 }
 
 func getVulnerabilities(res *clairpb.GetAncestryResponse) []api.Vulnerability {
@@ -110,29 +77,23 @@ func getFeaturs(res *clairpb.GetAncestryResponse) []api.Feature {
 	return fs
 }
 
-func parseImageName(imageName, registryUrl string) (string, string, string, string, error) {
+func parseImageName(imageName string) (string, string, string, error) {
 	repo, tag, digest, err := parsers.ParseImageName(imageName)
 	if err != nil {
-		return "", "", "", "", err
+		return "", "", "", err
 	}
 	// the repo part should have registry url as prefix followed by a '/'
 	// for example, if image name = "ubuntu" then
 	//					repo = "docker.io/library/ubuntu", tag = "latest", digest = ""
+	// 				for this image we need the repo = "library/ubuntu"
+	//
 	// 				if image name = "k8s.gcr.io/kubernetes-dashboard-amd64:v1.8.1" then
 	//					repo = "k8s.gcr.io/kubernetes-dashboard-amd64", tag = "v1.8.1", digest = ""
-	// here, for docker registry the api url is "https://registry-1.docker.io"
-	// and for other registry the url is "https://k8s.gcr.io"(gcr) or "https://quay.io"(quay)
+	// 				for this image we need the repo = "kubernetes-dashboard-amd64"
 	parts := strings.Split(repo, "/")
-	if registryUrl == "" {
-		if parts[0] == "docker.io" {
-			registryUrl = "https://registry-1." + parts[0]
-		} else {
-			registryUrl = "https://" + parts[0]
-		}
-	}
 	repo = strings.Join(parts[1:], "/")
 
-	return registryUrl, repo, tag, digest, err
+	return repo, tag, digest, err
 }
 
 func hashPart(digest string) string {
@@ -163,14 +124,14 @@ func sendLayer(postAncestryRequest *clairpb.PostAncestryRequest, clairClient cla
 
 func getLayer(
 	repo string, clairClient clairpb.AncestryServiceClient) ([]api.Feature, []api.Vulnerability, error) {
-	req := &clairpb.GetAncestryRequest{
+	getAncestryRequest := &clairpb.GetAncestryRequest{
 		AncestryName:        repo,
 		WithFeatures:        true,
 		WithVulnerabilities: true,
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
-	resp, err := clairClient.GetAncestry(ctx, req)
+	resp, err := clairClient.GetAncestry(ctx, getAncestryRequest)
 	if err != nil {
 		return []api.Feature{}, []api.Vulnerability{}, err
 	}

@@ -12,7 +12,6 @@ import (
 	reg "github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
 	api "github.com/soter/scanner/apis/scanner/v1alpha1"
-	"github.com/tamalsaha/go-oneliners"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -32,7 +31,7 @@ func IsVulnerable(
 	registryUrl, imageName, username, password string) ([]api.Feature, []api.Vulnerability, error) {
 
 	// TODO: need to check for digest part
-	registryUrl, repo, tag, _, err := parseImageName(imageName, registryUrl)
+	repo, tag, _, err := parseImageName(imageName)
 	if err != nil {
 		return nil, nil, WithCode(err, ParseImageNameError)
 	}
@@ -95,9 +94,6 @@ func IsVulnerable(
 		return nil, nil, WithCode(errors.New("unknown manifest type"), UnknownManifestError)
 	}
 
-	// TODO: need to remove the following line
-	oneliners.PrettyJson(postAncestryRequest, imageName)
-
 	layersLen := len(postAncestryRequest.Layers)
 	if layersLen == 0 {
 		return nil, nil, WithCode(errors.Wrapf(err, "failed to pull Layers for image %s", imageName), PullingLayersError)
@@ -105,10 +101,7 @@ func IsVulnerable(
 		fmt.Println("Analysing", layersLen, "layers")
 	}
 
-	clairAddress, err := getAddress(kc)
-	if err != nil {
-		return nil, nil, WithCode(errors.Wrapf(err, "failed to get ClairAddr for image %s", imageName), GettingClairAddressError)
-	}
+	clairAddress := "192.168.99.100:30060"
 
 	clairClient, err := clairClientSetup(clairAddress)
 	if err != nil {
@@ -120,14 +113,10 @@ func IsVulnerable(
 		return nil, nil, WithCode(errors.Wrapf(err, "failed to send layers for image %s", imageName), PostAncestryError)
 	}
 
-	features, vulnerabilities, err := getLayer(imageName, clairClient)
+	features, vulnerabilities, err := getLayer(repo, clairClient)
 	if err != nil {
 		return nil, nil, WithCode(errors.Wrapf(err, "failed to get features and vulnerabilities for image %s", imageName), GetAncestryError)
 	}
-
-	// TODO: need to remove the following two lines
-	oneliners.PrettyJson(features)
-	oneliners.PrettyJson(vulnerabilities)
 
 	if vulnerabilities != nil {
 		return features, vulnerabilities, WithCode(errors.Errorf("Image %s contains vulnerabilities", imageName), VulnerableStatus)

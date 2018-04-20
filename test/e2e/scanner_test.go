@@ -20,17 +20,16 @@ var _ = Describe("Image Scanner", func() {
 
 		labels          map[string]string
 		name, namespace string
-		containers1     []core.Container
-		containers2     []core.Container
-		containers3     []core.Container
-		data1, data2    string
-		skip1, skip2    bool
 
+		containers1      []core.Container
+		containers2      []core.Container
 		secret1, secret2 *core.Secret
 		service, svc     *core.Service
+		obj              runtime.Object
 		err              error
 
-		obj              runtime.Object
+		data1, data2     string
+		skip1, skip2     bool
 		str1, str2, str3 string
 
 		ctx1 = func(workloadType runtime.Object) {
@@ -132,8 +131,8 @@ var _ = Describe("Image Scanner", func() {
 
 		containers1 = []core.Container{
 			{
-				Name:  "label-practice",
-				Image: "shudipta/labels",
+				Name:  "labels",
+				Image: "tigerworks/labels",
 				Ports: []core.ContainerPort{
 					{
 						ContainerPort: 10000,
@@ -152,17 +151,6 @@ var _ = Describe("Image Scanner", func() {
 				},
 			},
 		}
-		containers3 = []core.Container{
-			{
-				Name:  "nginx",
-				Image: "nginx",
-				Ports: []core.ContainerPort{
-					{
-						ContainerPort: 80,
-					},
-				},
-			},
-		}
 	})
 
 	Describe("Scan images in Deployment", func() {
@@ -170,7 +158,7 @@ var _ = Describe("Image Scanner", func() {
 			f.DeleteAllSecrets()
 		})
 
-		FContext("Creating Deployment with some vulnerable images", func() {
+		Context("Creating Deployment with some vulnerable images", func() {
 			ctx1(&apps.Deployment{})
 		})
 
@@ -246,7 +234,7 @@ var _ = Describe("Image Scanner", func() {
 			ctx1(&batchv1.Job{})
 		})
 
-		Context("Creating Job with some vulnerable images", func() {
+		Context("Creating Job with non-vulnerable images", func() {
 			ctx2(&batchv1.Job{}, false)
 		})
 
@@ -264,7 +252,7 @@ var _ = Describe("Image Scanner", func() {
 			ctx1(&batchv1beta1.CronJob{})
 		})
 
-		Context("Creating CronJob with some vulnerable images", func() {
+		Context("Creating CronJob with non-vulnerable images", func() {
 			ctx2(&batchv1beta1.CronJob{}, false)
 		})
 	})
@@ -286,7 +274,7 @@ var _ = Describe("Image Scanner", func() {
 			ctx1(&apps.StatefulSet{})
 		})
 
-		Context("Creating StatefulSet with some vulnerable images", func() {
+		Context("Creating StatefulSet with non-vulnerable images", func() {
 			ctx2(&apps.StatefulSet{}, false)
 		})
 
