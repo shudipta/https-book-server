@@ -1,4 +1,4 @@
-package cert_generator
+package main
 
 import (
 	"crypto/rand"
@@ -18,12 +18,12 @@ const (
 	organization    = "abc.bd"
 	commonName      = "Book Server"
 	duration        = 365
-	caCertFilename  = "cert_generator/ca.crt"
-	caKeyFilename   = "cert_generator/ca.key"
-	srvCertFilename = "cert_generator/srv.crt"
-	srvKeyFilename  = "cert_generator/srv.key"
-	clCertFilename  = "cert_generator/cl.crt"
-	clKeyFilename   = "cert_generator/cl.key"
+	caCertFilename  = "cert-generator/ca.crt"
+	caKeyFilename   = "cert-generator/ca.key"
+	srvCertFilename = "cert-generator/srv.crt"
+	srvKeyFilename  = "cert-generator/srv.key"
+	clCertFilename  = "cert-generator/cl.crt"
+	clKeyFilename   = "cert-generator/cl.key"
 	isClient        = false
 )
 
@@ -113,24 +113,24 @@ func generate(certificate, parent x509.Certificate, certFilename, keyFilename st
 }
 
 func caCertPair() {
-	addresses := []string{"localhost", "127.0.0.1"}
+	addresses := []string{"localhost", "127.0.0.1", "192.168.99.100"}
 	caCert = newCertificate(organization, commonName, duration, 1, addresses)
 	generate(*caCert, *caCert, caCertFilename, caKeyFilename, true)
 }
 
 func srvCertPair() {
-	addresses := []string{"localhost", "127.0.0.1"}
+	addresses := []string{"localhost", "127.0.0.1", "192.168.99.100"}
 	srvCert = newCertificate(organization, commonName, duration, 2, addresses)
 	generate(*srvCert, *caCert, srvCertFilename, srvKeyFilename, false)
 }
 
 func clCertPair() {
-	addresses := []string{"localhost", "127.0.0.1"}
+	addresses := []string{"localhost", "127.0.0.1", "192.168.99.100"}
 	srvCert = newCertificate(organization, commonName, duration, 3, addresses)
 	generate(*srvCert, *caCert, clCertFilename, clKeyFilename, false)
 }
 
-func CertGenerate() {
+func main() {
 	caCertPair()
 	srvCertPair()
 	clCertPair()

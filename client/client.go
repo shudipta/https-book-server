@@ -7,18 +7,24 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 )
 
 func main() {
+	l := len(os.Args)
+	fmt.Println("num of args is", l)
+	privateKeyFile := os.Args[l-3]
+	certificateFile := os.Args[l-2]
+	caFile := os.Args[l-1]
+
 	// Load client cert
-	cert, err := tls.LoadX509KeyPair("cert_generator/cl.crt",
-		"cert_generator/cl.key")
+	cert, err := tls.LoadX509KeyPair(certificateFile, privateKeyFile)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Load CA cert
-	caCert, err := ioutil.ReadFile("cert_generator/ca.crt")
+	caCert, err := ioutil.ReadFile(caFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -34,7 +40,7 @@ func main() {
 	transport := &http.Transport{TLSClientConfig: tlsConfig}
 	client := &http.Client{Transport: transport}
 
-	resp, err := client.Get("https://localhost:8080/showBookList")
+	resp, err := client.Get("https://172.17.0.5:10010/")
 	if err != nil {
 		fmt.Println(err)
 	}

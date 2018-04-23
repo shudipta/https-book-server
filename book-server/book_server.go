@@ -1,4 +1,4 @@
-package book_server
+package main
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -26,8 +27,8 @@ type Book struct {
 	Author string `json:"Author, omitempty"`
 }
 
-var Port = "10000"
-var LoggedIn bool
+var Port = "10010"
+var LoggedIn = true
 var srv *http.Server = &http.Server{Addr: Port}
 var tlsConfig *tls.Config
 
@@ -239,8 +240,8 @@ func HandleRequests() {
 
 }
 
-func GetTls() {
-	caCert, err := ioutil.ReadFile("cert_generator/ca.crt")
+func GetTls(caFile string) {
+	caCert, err := ioutil.ReadFile(caFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -261,9 +262,9 @@ func GetTls() {
 	tlsConfig.BuildNameToCertificate()
 }
 
-func StartServer(port string, loggedIn bool) {
-	Port = port
-	LoggedIn = loggedIn
+func StartServer(certificateFile, privateKeyFile string) {
+	// Port = port
+	// LoggedIn = loggedIn
 
 	srv = &http.Server{
 		Addr:         ":" + Port,
@@ -272,9 +273,9 @@ func StartServer(port string, loggedIn bool) {
 		//IdleTimeout:  120 * time.Second,
 		TLSConfig: tlsConfig,
 	}
-	fmt.Println("---------->", srv.Addr)
+	fmt.Println("-----server-address----->", srv.Addr)
 	fmt.Println("-----Login----->", LoggedIn)
-	serverErr := srv.ListenAndServeTLS("cert_generator/srv.crt", "cert_generator/srv.key")
+	serverErr := srv.ListenAndServeTLS(certificateFile, privateKeyFile)
 
 	if serverErr != nil {
 		log.Fatal("Server Error:", serverErr)
@@ -289,8 +290,13 @@ func ShutdownServer() {
 }
 
 func main() {
+	l := len(os.Args)
+	fmt.Println("num of args is", l)
+	privateKeyFile := os.Args[l-3]
+	certificateFile := os.Args[l-2]
+	caFile := os.Args[l-1]
 	HandleRequests()
-	GetTls()
-	StartServer("8080", true)
-	ShutdownServer()
+	GetTls(caFile)
+	StartServer(certificateFile, privateKeyFile)
+	// ShutdownServer()
 }

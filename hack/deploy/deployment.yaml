@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: https-book-server
+  labels:
+    app: https
+# type: 
+data:
+  ca.crt: ${CA_CERT}
+  srv.crt: ${SERVER_CERT}
+  srv.key: ${SERVER_KEY}
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: https-book-server
+  namespace: default
+  labels:
+    app: https
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: https
+  template:
+    metadata:
+      labels:
+        app: https
+    spec:
+      volumes:
+      - name: book-serving-cert
+        secret:
+          # defaultMode: 420
+          secretName: https-book-server
+      containers:
+      - name: https-book-server
+        # args:
+        # - /var/book-serving-cert/srv.key
+        # - /var/book-serving-cert/srv.crt
+        # - /var/book-serving-cert/ca.crt
+        image: shudipta/https-book-server:v1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 10010
+        volumeMounts:
+        - mountPath: /var/book-serving-cert
+          name: book-serving-cert
+          readOnly: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: https-book-server
+  namespace: default
+  labels:
+    app: https
+spec:
+  type: NodePort
+  ports:
+  - name: https-book-server
+    protocol: TCP
+    port: 10010
+    targetPort: 10010
+    nodePort: 30010
+  selector:
+    app: https
