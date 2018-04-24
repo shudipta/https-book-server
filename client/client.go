@@ -35,15 +35,18 @@ func main() {
 	tlsConfig := &tls.Config{
 		Certificates: []tls.Certificate{cert},
 		RootCAs:      caCertPool,
+		// InsecureSkipVerify: true,
 	}
 	tlsConfig.BuildNameToCertificate()
 	transport := &http.Transport{TLSClientConfig: tlsConfig}
 	client := &http.Client{Transport: transport}
 
-	resp, err := client.Get("https://172.17.0.5:10010/")
+	resp, err := client.Get("https://192.168.99.100:30010")
+	// resp, err := client.Get("https://localhost:8443/")
 	if err != nil {
 		fmt.Println(err)
 	}
+
 	contents, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatal("reading response error:", err)

@@ -4,7 +4,7 @@ metadata:
   name: clair-cert
   labels:
     app: clair
-type: kubernetes.io/tls
+# type: kubernetes.io/tls
 data:
   ca.crt: ${CA_CERT}
   cl.crt: ${CLIENT_CERT}
@@ -45,9 +45,9 @@ spec:
       - name: secret-volume
         secret:
           secretName: clairsecret
-      - name: serving-cert
+      - name: clair-serving-cert
         secret:
-          defaultMode: 420
+          # defaultMode: 420
           secretName: clair-cert
       containers:
       - name: clair
@@ -61,8 +61,9 @@ spec:
         volumeMounts:
         - mountPath: /config
           name: secret-volume
-        - mountPath: /var/serving-cert
-          name: serving-cert
+        - mountPath: /var/clair-serving-cert
+          name: clair-serving-cert
+          readOnly: true
 ---
 apiVersion: v1
 kind: ReplicationController

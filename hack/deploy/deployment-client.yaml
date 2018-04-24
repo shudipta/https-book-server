@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: https-client
+  labels:
+    app: https-client
+# type: 
+data:
+  ca.crt: ${CA_CERT}
+  cl.crt: ${CLIENT_CERT}
+  cl.key: ${CLIENT_KEY}
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: https-client
+  namespace: default
+  labels:
+    app: https-client
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: https-client
+  template:
+    metadata:
+      labels:
+        app: https-client
+    spec:
+      volumes:
+      - name: client-serving-cert
+        secret:
+          # defaultMode: 420
+          secretName: https-client
+      containers:
+      - name: https-client
+        # args:
+        # - /var/book-serving-cert/srv.key
+        # - /var/book-serving-cert/srv.crt
+        # - /var/book-serving-cert/ca.crt
+        image: shudipta/https-client:v1
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8443
+        volumeMounts:
+        - mountPath: /var/client-serving-cert
+          name: client-serving-cert
+          readOnly: true

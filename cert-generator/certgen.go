@@ -48,11 +48,12 @@ func newCertificate(organization, commonName string, duration int, check int, ad
 		//return &certificate
 	} else {
 		certificate.KeyUsage = x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature
-		if check == 2 {
-			certificate.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}
-		} else {
-			certificate.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}
-		}
+		certificate.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth}
+		// if check == 2 {
+		// 	certificate.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}
+		// } else {
+		// 	certificate.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}
+		// }
 	}
 	//
 	for i := 0; i < len(addresses); i++ {
@@ -113,19 +114,19 @@ func generate(certificate, parent x509.Certificate, certFilename, keyFilename st
 }
 
 func caCertPair() {
-	addresses := []string{"localhost", "127.0.0.1", "192.168.99.100"}
+	addresses := []string{"192.168.99.100"} //"localhost", "127.0.0.1",
 	caCert = newCertificate(organization, commonName, duration, 1, addresses)
 	generate(*caCert, *caCert, caCertFilename, caKeyFilename, true)
 }
 
 func srvCertPair() {
-	addresses := []string{"localhost", "127.0.0.1", "192.168.99.100"}
+	addresses := []string{"192.168.99.100"} //"localhost", "127.0.0.1",
 	srvCert = newCertificate(organization, commonName, duration, 2, addresses)
 	generate(*srvCert, *caCert, srvCertFilename, srvKeyFilename, false)
 }
 
 func clCertPair() {
-	addresses := []string{"localhost", "127.0.0.1", "192.168.99.100"}
+	addresses := []string{"192.168.99.100"} //"localhost", "127.0.0.1",
 	srvCert = newCertificate(organization, commonName, duration, 3, addresses)
 	generate(*srvCert, *caCert, clCertFilename, clKeyFilename, false)
 }

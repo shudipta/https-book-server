@@ -27,7 +27,7 @@ type Book struct {
 	Author string `json:"Author, omitempty"`
 }
 
-var Port = "10010"
+var Port = "8443"
 var LoggedIn = true
 var srv *http.Server = &http.Server{Addr: Port}
 var tlsConfig *tls.Config
@@ -90,7 +90,7 @@ func checkAuth(r *http.Request) bool {
 }
 
 func Hello(r *http.Request) Response {
-	fmt.Println(r.URL, "page")
+	fmt.Println(r.URL, "page may be from clair or any client")
 	return Response{http.StatusOK, welcome}
 }
 
@@ -257,15 +257,12 @@ func GetTls(caFile string) {
 		// RequireAnyClientCert
 		// VerifyClientCertIfGiven
 		// RequireAndVerifyClientCert
-		ClientAuth: tls.RequireAndVerifyClientCert,
+		ClientAuth: tls.NoClientCert, //tls.RequireAndVerifyClientCert,
 	}
 	tlsConfig.BuildNameToCertificate()
 }
 
 func StartServer(certificateFile, privateKeyFile string) {
-	// Port = port
-	// LoggedIn = loggedIn
-
 	srv = &http.Server{
 		Addr:         ":" + Port,
 		ReadTimeout:  5 * time.Second,
@@ -273,8 +270,8 @@ func StartServer(certificateFile, privateKeyFile string) {
 		//IdleTimeout:  120 * time.Second,
 		TLSConfig: tlsConfig,
 	}
-	fmt.Println("-----server-address----->", srv.Addr)
-	fmt.Println("-----Login----->", LoggedIn)
+	fmt.Println("server-port-----", srv.Addr)
+	fmt.Println("Login-----", LoggedIn)
 	serverErr := srv.ListenAndServeTLS(certificateFile, privateKeyFile)
 
 	if serverErr != nil {
@@ -295,7 +292,9 @@ func main() {
 	privateKeyFile := os.Args[l-3]
 	certificateFile := os.Args[l-2]
 	caFile := os.Args[l-1]
+
 	HandleRequests()
+
 	GetTls(caFile)
 	StartServer(certificateFile, privateKeyFile)
 	// ShutdownServer()

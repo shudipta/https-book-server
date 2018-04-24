@@ -41,7 +41,7 @@ spec:
         image: shudipta/https-book-server:v1
         imagePullPolicy: Always
         ports:
-        - containerPort: 10010
+        - containerPort: 8443
         volumeMounts:
         - mountPath: /var/book-serving-cert
           name: book-serving-cert
@@ -59,8 +59,8 @@ spec:
   ports:
   - name: https-book-server
     protocol: TCP
-    port: 10010
-    targetPort: 10010
+    port: 8443
+    targetPort: 8443
     nodePort: 30010
   selector:
     app: https
