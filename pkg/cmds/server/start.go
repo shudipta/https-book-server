@@ -18,7 +18,7 @@ const defaultEtcdPathPrefix = "/registry/soter.ac"
 
 type ScannerOptions struct {
 	RecommendedOptions *genericoptions.RecommendedOptions
-	ControllerOptions  *ControllerOptions
+	ExtraOptions       *ExtraOptions
 
 	StdOut io.Writer
 	StdErr io.Writer
@@ -28,7 +28,7 @@ func NewScannerOptions(out, errOut io.Writer) *ScannerOptions {
 	o := &ScannerOptions{
 		// TODO we will nil out the etcd storage options.  This requires a later level of k8s.io/apiserver
 		RecommendedOptions: genericoptions.NewRecommendedOptions(defaultEtcdPathPrefix, server.Codecs.LegacyCodec(admissionv1beta1.SchemeGroupVersion)),
-		ControllerOptions:  NewControllerOptions(),
+		ExtraOptions:       NewExtraOptions(),
 		StdOut:             out,
 		StdErr:             errOut,
 	}
@@ -39,7 +39,7 @@ func NewScannerOptions(out, errOut io.Writer) *ScannerOptions {
 
 func (o ScannerOptions) AddFlags(fs *pflag.FlagSet) {
 	o.RecommendedOptions.AddFlags(fs)
-	o.ControllerOptions.AddFlags(fs)
+	o.ExtraOptions.AddFlags(fs)
 }
 
 func (o ScannerOptions) Validate(args []string) error {
@@ -62,7 +62,7 @@ func (o ScannerOptions) Config() (*server.ScannerConfig, error) {
 	}
 	serverConfig.EnableMetrics = true
 	serverConfig.OpenAPIConfig = genericapiserver.DefaultOpenAPIConfig(v1alpha1.GetOpenAPIDefinitions, server.Scheme)
-	serverConfig.OpenAPIConfig.Info.Title = "soter-scanner"
+	serverConfig.OpenAPIConfig.Info.Title = "soter-clair"
 	serverConfig.OpenAPIConfig.Info.Version = v1alpha1.SchemeGroupVersion.Version
 	serverConfig.OpenAPIConfig.IgnorePrefixes = []string{
 		"/swaggerapi",
@@ -75,14 +75,14 @@ func (o ScannerOptions) Config() (*server.ScannerConfig, error) {
 		"/apis/admission.scanner.soter.ac/v1alpha1/cronjobs",
 	}
 
-	controllerConfig := controller.NewControllerConfig(serverConfig.ClientConfig)
-	if err := o.ControllerOptions.ApplyTo(controllerConfig); err != nil {
+	controllerConfig := controller.NewConfig(serverConfig.ClientConfig)
+	if err := o.ExtraOptions.ApplyTo(controllerConfig); err != nil {
 		return nil, err
 	}
 
 	config := &server.ScannerConfig{
-		GenericConfig:    serverConfig,
-		ControllerConfig: controllerConfig,
+		GenericConfig: serverConfig,
+		ScannerConfig: controllerConfig,
 	}
 	return config, nil
 }

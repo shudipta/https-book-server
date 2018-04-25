@@ -6,7 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func (c *ScannerController) NewJobWebhook() hooks.AdmissionHook {
+func (c *Controller) NewJobWebhook() hooks.AdmissionHook {
 	return workload.NewWorkloadWebhook(
 		schema.GroupVersionResource{
 			Group:    "admission.scanner.soter.ac",

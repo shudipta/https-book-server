@@ -38,7 +38,7 @@ build_binary() {
 
 build_docker() {
     pushd $GOPATH/src/github.com/soter/scanner/hack/docker
-    cp $DIST/soter-scanner/soter-scanner-alpine-amd64 scanner
+    cp $DIST/scanner/scanner-alpine-amd64 scanner
     chmod 755 scanner
 
     cat >Dockerfile <<EOL

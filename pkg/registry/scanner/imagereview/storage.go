@@ -5,8 +5,8 @@ import (
 
 	api "github.com/soter/scanner/apis/scanner/v1alpha1"
 	"github.com/soter/scanner/client/clientset/versioned"
+	"github.com/soter/scanner/pkg/clair"
 	"github.com/soter/scanner/pkg/controller"
-	"github.com/soter/scanner/pkg/scanner"
 	"github.com/tamalsaha/go-oneliners"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -17,7 +17,7 @@ import (
 
 type REST struct {
 	client     versioned.Interface
-	controller *controller.ScannerController
+	controller *controller.Controller
 
 	lock sync.RWMutex
 }
@@ -25,7 +25,7 @@ type REST struct {
 var _ rest.Creater = &REST{}
 var _ rest.GroupVersionKindProvider = &REST{}
 
-func NewREST(config *restconfig.Config, ctl *controller.ScannerController) *REST {
+func NewREST(config *restconfig.Config, ctl *controller.Controller) *REST {
 	return &REST{
 		client:     versioned.NewForConfigOrDie(config),
 		controller: ctl,
@@ -46,8 +46,8 @@ func (r *REST) Create(ctx apirequest.Context, obj runtime.Object, _ rest.Validat
 	secretNames := controller.GetAllSecrets(req.Request.ImagePullSecrets)
 
 	features, vulnerabilities, err := r.controller.CheckImage(ns, req.Request.Image, secretNames)
-	if err.(*scanner.ErrorWithCode).Code() != scanner.VulnerableStatus &&
-		err.(*scanner.ErrorWithCode).Code() != scanner.NotVulnerableStatus {
+	if err.(*clair.ErrorWithCode).Code() != clair.VulnerableStatus &&
+		err.(*clair.ErrorWithCode).Code() != clair.NotVulnerableStatus {
 		return nil, err
 	}
 

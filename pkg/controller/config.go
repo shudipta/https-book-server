@@ -1,42 +1,34 @@
 package controller
 
 import (
-	"time"
-
-	hooks "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
 	"github.com/soter/scanner/pkg/eventer"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
+type config struct {
+	ClairAddress string
+}
+
 type Config struct {
-	ScannerImageTag string
-	DockerRegistry  string
-	MaxNumRequeues  int
-	NumThreads      int
-	ResyncPeriod    time.Duration
+	config
+
+	ClientConfig *rest.Config
+	KubeClient   kubernetes.Interface
 }
 
-type ControllerConfig struct {
-	Config
-
-	ClientConfig   *rest.Config
-	KubeClient     kubernetes.Interface
-	AdmissionHooks []hooks.AdmissionHook
-}
-
-func NewControllerConfig(clientConfig *rest.Config) *ControllerConfig {
-	return &ControllerConfig{
+func NewConfig(clientConfig *rest.Config) *Config {
+	return &Config{
 		ClientConfig: clientConfig,
 	}
 }
 
-func (c *ControllerConfig) New() (*ScannerController, error) {
-	ctrl := &ScannerController{
-		Config: c.Config,
+func (c *Config) New() (*Controller, error) {
+	ctrl := &Controller{
+		config: c.config,
 
-		KubeClient: c.KubeClient,
-		recorder:   eventer.NewEventRecorder(c.KubeClient, "soter-scanner"),
+		client:   c.KubeClient,
+		recorder: eventer.NewEventRecorder(c.KubeClient, "scanner.soter.ac"),
 	}
 	return ctrl, nil
 }

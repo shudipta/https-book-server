@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	workload "github.com/appscode/kubernetes-webhook-util/workload/v1"
+	workload "github.com/appscode/kubernetes-webhook-util/apis/workload/v1"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"

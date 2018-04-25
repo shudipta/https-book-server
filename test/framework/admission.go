@@ -16,7 +16,7 @@ import (
 	kapi "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 )
 
-func (f *Framework) NewScannerOptions(kubeConfigPath string, controllerOptions *srvr.ControllerOptions) *srvr.ScannerOptions {
+func (f *Framework) NewScannerOptions(kubeConfigPath string, extraOptions *srvr.ExtraOptions) *srvr.ScannerOptions {
 	opts := srvr.NewScannerOptions(os.Stdout, os.Stderr)
 	opts.RecommendedOptions.Authentication.RemoteKubeConfigFile = kubeConfigPath
 	//opts.RecommendedOptions.Authentication.SkipInClusterLookup = true
@@ -24,14 +24,14 @@ func (f *Framework) NewScannerOptions(kubeConfigPath string, controllerOptions *
 	opts.RecommendedOptions.CoreAPI.CoreAPIKubeconfigPath = kubeConfigPath
 	opts.RecommendedOptions.SecureServing.BindPort = 8443
 	opts.RecommendedOptions.SecureServing.BindAddress = net.ParseIP("127.0.0.1")
-	opts.ControllerOptions = controllerOptions
+	opts.ExtraOptions = extraOptions
 	opts.StdErr = os.Stderr
 	opts.StdOut = os.Stdout
 
 	return opts
 }
 
-func (f *Framework) StartAPIServerAndOperator(kubeConfigPath string, controllerOptions *srvr.ControllerOptions) {
+func (f *Framework) StartAPIServerAndOperator(kubeConfigPath string, extraOptions *srvr.ExtraOptions) {
 	sh := shell.NewSession()
 	args := []interface{}{"--namespace", f.Namespace()}
 	cmd := filepath.Join("..", "..", "hack", "dev", "setup-server.sh")
@@ -42,7 +42,7 @@ func (f *Framework) StartAPIServerAndOperator(kubeConfigPath string, controllerO
 
 	By("Starting Server and Operator")
 	stopCh := genericapiserver.SetupSignalHandler()
-	opts := f.NewScannerOptions(kubeConfigPath, controllerOptions)
+	opts := f.NewScannerOptions(kubeConfigPath, extraOptions)
 	err = opts.Run(stopCh)
 	Expect(err).ShouldNot(HaveOccurred())
 }

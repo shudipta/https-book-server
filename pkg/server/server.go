@@ -6,10 +6,8 @@ import (
 
 	hooks "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
 	admissionreview "github.com/appscode/kubernetes-webhook-util/registry/admissionreview/v1beta1"
-	"github.com/soter/scanner/apis/scanner"
 	"github.com/soter/scanner/apis/scanner/install"
 	"github.com/soter/scanner/apis/scanner/v1alpha1"
-	"github.com/soter/scanner/pkg/cache"
 	"github.com/soter/scanner/pkg/controller"
 	irregistry "github.com/soter/scanner/pkg/registry/scanner/imagereview"
 	admission "k8s.io/api/admission/v1beta1"
@@ -53,25 +51,25 @@ func init() {
 }
 
 type ScannerConfig struct {
-	GenericConfig    *genericapiserver.RecommendedConfig
-	ControllerConfig *controller.ControllerConfig
+	GenericConfig *genericapiserver.RecommendedConfig
+	ScannerConfig *controller.Config
 }
 
 // ScannerServer contains state for a Kubernetes cluster master/api server.
 type ScannerServer struct {
 	GenericAPIServer *genericapiserver.GenericAPIServer
-	Controller       *controller.ScannerController
+	Scanner          *controller.Controller
 }
 
 func (op *ScannerServer) Run(stopCh <-chan struct{}) error {
-	go cache.New(op.Controller).Run()
+	go op.Scanner.ScanCluster()
 
 	return op.GenericAPIServer.PrepareRun().Run(stopCh)
 }
 
 type completedConfig struct {
-	GenericConfig    genericapiserver.CompletedConfig
-	ControllerConfig *controller.ControllerConfig
+	GenericConfig genericapiserver.CompletedConfig
+	ScannerConfig *controller.Config
 }
 
 type CompletedConfig struct {
@@ -83,7 +81,7 @@ type CompletedConfig struct {
 func (c *ScannerConfig) Complete() CompletedConfig {
 	completedCfg := completedConfig{
 		c.GenericConfig.Complete(),
-		c.ControllerConfig,
+		c.ScannerConfig,
 	}
 
 	completedCfg.GenericConfig.Version = &version.Info{
@@ -100,11 +98,12 @@ func (c completedConfig) New() (*ScannerServer, error) {
 	if err != nil {
 		return nil, err
 	}
-	ctrl, err := c.ControllerConfig.New()
+	ctrl, err := c.ScannerConfig.New()
 	if err != nil {
 		return nil, err
 	}
-	c.ControllerConfig.AdmissionHooks = []hooks.AdmissionHook{
+
+	var admissionHooks = []hooks.AdmissionHook{
 		ctrl.NewDeploymentWebhook(),
 		ctrl.NewDaemonSetWebhook(),
 		ctrl.NewStatefulSetWebhook(),
@@ -116,10 +115,10 @@ func (c completedConfig) New() (*ScannerServer, error) {
 
 	s := &ScannerServer{
 		GenericAPIServer: genericServer,
-		Controller:       ctrl,
+		Scanner:          ctrl,
 	}
 
-	for _, versionMap := range admissionHooksByGroupThenVersion(c.ControllerConfig.AdmissionHooks...) {
+	for _, versionMap := range admissionHooksByGroupThenVersion(admissionHooks...) {
 
 		accessor := meta.NewAccessor()
 		versionInterfaces := &meta.VersionInterfaces{
@@ -189,25 +188,25 @@ func (c completedConfig) New() (*ScannerServer, error) {
 		}
 	}
 
-	for i := range c.ControllerConfig.AdmissionHooks {
-		admissionHook := c.ControllerConfig.AdmissionHooks[i]
+	for i := range admissionHooks {
+		admissionHook := admissionHooks[i]
 		postStartName := postStartHookName(admissionHook)
 		if len(postStartName) == 0 {
 			continue
 		}
 		s.GenericAPIServer.AddPostStartHookOrDie(postStartName,
 			func(context genericapiserver.PostStartHookContext) error {
-				return admissionHook.Initialize(c.ControllerConfig.ClientConfig, context.StopCh)
+				return admissionHook.Initialize(c.ScannerConfig.ClientConfig, context.StopCh)
 			},
 		)
 	}
 
 	{
-		apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(scanner.GroupName, registry, Scheme, metav1.ParameterCodec, Codecs)
+		apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(v1alpha1.SchemeGroupVersion.Group, registry, Scheme, metav1.ParameterCodec, Codecs)
 		apiGroupInfo.GroupMeta.GroupVersion = v1alpha1.SchemeGroupVersion
 		v1alpha1storage := map[string]rest.Storage{}
-		v1alpha1storage[v1alpha1.ResourcePluralImageReview] = irregistry.NewREST(c.ControllerConfig.ClientConfig, s.Controller)
-		apiGroupInfo.VersionedResourcesStorageMap["v1alpha1"] = v1alpha1storage
+		v1alpha1storage[v1alpha1.ResourcePluralImageReview] = irregistry.NewREST(c.ScannerConfig.ClientConfig, s.Scanner)
+		apiGroupInfo.VersionedResourcesStorageMap[v1alpha1.SchemeGroupVersion.Version] = v1alpha1storage
 
 		if err := s.GenericAPIServer.InstallAPIGroup(&apiGroupInfo); err != nil {
 			return nil, err

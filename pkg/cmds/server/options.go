@@ -8,32 +8,37 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-type ControllerOptions struct {
-	QPS   float64
-	Burst int
+type ExtraOptions struct {
+	ClairAddress string
+	QPS          float64
+	Burst        int
 }
 
-func NewControllerOptions() *ControllerOptions {
-	return &ControllerOptions{
-		QPS:   100,
-		Burst: 100,
+func NewExtraOptions() *ExtraOptions {
+	return &ExtraOptions{
+		ClairAddress: "http://clair.default.svc:6060",
+		QPS:          100,
+		Burst:        100,
 	}
 }
 
-func (s *ControllerOptions) AddGoFlags(fs *flag.FlagSet) {
+func (s *ExtraOptions) AddGoFlags(fs *flag.FlagSet) {
+	fs.StringVar(&s.ClairAddress, "clair-addr", s.ClairAddress, "The maximum QPS to the master from this client")
+
 	fs.Float64Var(&s.QPS, "qps", s.QPS, "The maximum QPS to the master from this client")
 	fs.IntVar(&s.Burst, "burst", s.Burst, "The maximum burst for throttle")
 }
 
-func (s *ControllerOptions) AddFlags(fs *pflag.FlagSet) {
-	pfs := flag.NewFlagSet("scanner", flag.ExitOnError)
+func (s *ExtraOptions) AddFlags(fs *pflag.FlagSet) {
+	pfs := flag.NewFlagSet("clair", flag.ExitOnError)
 	s.AddGoFlags(pfs)
 	fs.AddGoFlagSet(pfs)
 }
 
-func (s *ControllerOptions) ApplyTo(cfg *controller.ControllerConfig) error {
+func (s *ExtraOptions) ApplyTo(cfg *controller.Config) error {
 	var err error
 
+	cfg.ClairAddress = s.ClairAddress
 	cfg.ClientConfig.QPS = float32(s.QPS)
 	cfg.ClientConfig.Burst = s.Burst
 
