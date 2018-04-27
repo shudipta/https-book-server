@@ -20,6 +20,12 @@ imagePullPolicy: IfNotPresent
 ## Installs Soter scanner as critical addon
 ## https://kubernetes.io/docs/tasks/administer-cluster/guaranteed-scheduling-critical-addon-pods/
 criticalAddon: false
+## Log level for kubepack
+logLevel: 3
+## Node labels for pod assignment
+## Ref: https://kubernetes.io/docs/user-guide/node-selection/
+##
+nodeSelector: {}
 
 ## Install Default RBAC roles and bindings
 rbac:
@@ -42,8 +48,8 @@ apiserver:
   # https://github.com/kubernetes/kube-aggregator/blob/release-1.9/pkg/apis/apiregistration/v1beta1/types.go#L66-L70
   # for more information on proper values of this field
   versionPriority: 15
-  # enableAdmissionWebhook is used to configure apiserver as ValidationWebhook for Voyager CRDs
-  enableAdmissionWebhook: false
+  # enableValidatingWebhook is used to configure validating webhook for Kubernetes workloads
+  enableValidatingWebhook: false
   # CA certificate used by main Kubernetes api server
   ca:
 

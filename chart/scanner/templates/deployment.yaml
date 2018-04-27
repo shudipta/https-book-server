@@ -1,4 +1,4 @@
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ template "scanner.fullname" . }}
@@ -35,7 +35,7 @@ spec:
         imagePullPolicy: {{ .Values.imagePullPolicy }}
         args:
         - run
-        - --v=3
+        - --v={{ .Values.logLevel }}
         - --rbac={{ .Values.rbac.create }}
         - --docker-registry={{ .Values.scanner.registry }}
         - --secure-port=8443
@@ -45,7 +45,6 @@ spec:
         - --enable-analytics={{ .Values.enableAnalytics }}
         ports:
         - containerPort: 8443
-        - containerPort: 56790
         readinessProbe:
           httpGet:
             path: /healthz
@@ -63,4 +62,7 @@ spec:
       tolerations:
       - key: CriticalAddonsOnly
         operator: Exists
+{{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
 {{- end -}}

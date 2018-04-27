@@ -1,5 +1,6 @@
 # Scanner
-[Scanner by AppsCode](https://github.com/soter/scanner) - Backup your Kubernetes Volumes
+[Scanner by AppsCode](https://github.com/soter/scanner) - Docker Image Scanner.
+
 ## TL;DR;
 
 ```console
@@ -10,19 +11,20 @@ $ helm install appscode/scanner
 
 ## Introduction
 
-This chart bootstraps a [Soter scanner](https://github.com/soter/scanner) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
+This chart bootstraps a [Scanner server](https://github.com/soter/scanner) deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
 
 ## Prerequisites
 
-- Kubernetes 1.8+
+- Kubernetes 1.9+
 
 ## Installing the Chart
-
 To install the chart with the release name `my-release`:
+
 ```console
 $ helm install appscode/scanner --name my-release
 ```
-The command deploys Soter scanner on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
+
+The command deploys Scanner server on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
 
 > **Tip**: List all releases using `helm list`
 
@@ -43,21 +45,18 @@ The following table lists the configurable parameters of the Scanner chart and t
 
 | Parameter                           | Description                                                       | Default            |
 | ----------------------------------- | ----------------------------------------------------------------- | ------------------ |
-| `replicaCount`                      | Number of scanner scanner replicas to create (only 1 is supported)| `1`                |
-| `scanner.registry`                  | Docker registry used to pull scanner image                        | `appscode`         |
-| `scanner.repository`                | scanner container image                                           | `scanner`          |
-| `scanner.tag`                       | scanner container image tag                                       | `0.7.0-rc.3`       |
-| `pushgateway.registry`              | Docker registry used to pull Prometheus pushgateway image         | `prom`             |
-| `pushgateway.repository`            | Prometheus pushgateway container image                            | `pushgateway`      |
-| `pushgateway.tag`                   | Prometheus pushgateway container image tag                        | `v0.4.0`           |
+| `replicaCount`                      | Number of Scanner server replicas to create (only 1 is supported) | `1`                |
+| `scanner.registry`                  | Docker registry used to pull Scanner image                        | `soter`            |
+| `scanner.repository`                | Scanner container image                                           | `scanner`          |
+| `scanner.tag`                       | Scanner container image tag                                       | `canary`           |
 | `imagePullPolicy`                   | container image pull policy                                       | `IfNotPresent`     |
-| `criticalAddon`                     | If true, installs Soter scanner as critical addon                 | `false`            |
+| `criticalAddon`                     | If true, installs Scanner server as critical addon                | `false`            |
 | `rbac.create`                       | If `true`, create and use RBAC resources                          | `true`             |
 | `serviceAccount.create`             | If `true`, create a new service account                           | `true`             |
 | `serviceAccount.name`               | Service account to be used. If not set and `serviceAccount.create` is `true`, a name is generated using the fullname template | `` |
 | `apiserver.groupPriorityMinimum`    | The minimum priority the group should have.                       | 10000              |
 | `apiserver.versionPriority`         | The ordering of this API inside of the group.                     | 15                 |
-| `apiserver.enableValidatingWebhook` | Enable validating webhooks for Scanner CRDs                       | false              |
+| `apiserver.enableValidatingWebhook` | Enable validating webhooks for Kubernetes workloads               | false              |
 | `apiserver.enableMutatingWebhook`   | Enable mutating webhooks for Kubernetes workloads                 | false              |
 | `apiserver.ca`                      | CA certificate used by main Kubernetes api server                 | ``                 |
 | `enableAnalytics`                   | Send usage events to Google Analytics                             | `true`             |
