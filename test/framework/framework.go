@@ -3,6 +3,7 @@ package framework
 import (
 	"github.com/appscode/go/crypto/rand"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	ka "k8s.io/kube-aggregator/pkg/client/clientset_generated/clientset"
 )
 
@@ -11,14 +12,17 @@ type Framework struct {
 	KAClient       ka.Interface
 	namespace      string
 	WebhookEnabled bool
+
+	ClientConfig *rest.Config
 }
 
-func New(kubeClient kubernetes.Interface, kaClient ka.Interface, webhookEnabled bool) *Framework {
+func New(kubeClient kubernetes.Interface, kaClient ka.Interface, webhookEnabled bool, clientConfig *rest.Config) *Framework {
 	return &Framework{
 		KubeClient:     kubeClient,
 		KAClient:       kaClient,
 		namespace:      rand.WithUniqSuffix("scanner-e2e"),
 		WebhookEnabled: webhookEnabled,
+		ClientConfig:   clientConfig,
 	}
 }
 

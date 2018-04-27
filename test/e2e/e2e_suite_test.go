@@ -41,12 +41,12 @@ var _ = BeforeSuite(func() {
 	kaClient, err := ka.NewForConfig(clientConfig)
 	Expect(err).NotTo(HaveOccurred())
 
-	root = framework.New(kubeClient, kaClient, options.StartAPIServer)
+	root = framework.New(kubeClient, kaClient, options.StartAPIServer, clientConfig)
 	err = root.CreateNamespace()
 	Expect(err).NotTo(HaveOccurred())
 	By("Using test namespace " + root.Namespace())
 
-	go root.StartAPIServerAndOperator(options.KubeConfig, options.extraOptions)
+	go root.StartAPIServerAndOperator(options.KubeConfig, options.ExtraOptions)
 	root.EventuallyAPIServerReady("v1alpha1.admission.scanner.soter.ac").Should(Succeed())
 	// let's API server be warmed up
 	time.Sleep(time.Second * 5)

@@ -6,10 +6,11 @@ import (
 	"net/url"
 	"strings"
 
+	reg "github.com/appscode/docker-registry-client/registry"
+	httpz "github.com/appscode/go/net/http"
 	manifestV2 "github.com/docker/distribution/manifest/schema2"
 	dockertypes "github.com/docker/docker/api/types"
 	"github.com/golang/glog"
-	reg "github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
 	"k8s.io/api/core/v1"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -20,6 +21,10 @@ import (
 	_ "k8s.io/kubernetes/pkg/credentialprovider/gcp"
 	// _ "k8s.io/kubernetes/pkg/credentialprovider/rancher" // enable in Kube 1.10
 	"k8s.io/kubernetes/pkg/util/parsers"
+)
+
+var (
+	ErrManifestV2Required = errors.New("image manifest must of v2 format")
 )
 
 func MakeDockerKeyring(pullSecrets []v1.Secret) (credentialprovider.DockerKeyring, error) {
@@ -104,11 +109,13 @@ func PullManifest(ref ImageRef, keyring credentialprovider.DockerKeyring) (*reg.
 	return nil, nil, nil, utilerrors.NewAggregate(pullErrs)
 }
 
+var transport = httpz.LogTransport(http.DefaultTransport)
+
 func pullManifest(ref ImageRef, auth *dockertypes.AuthConfig) (*reg.Registry, interface{}, error) {
 	hub := &reg.Registry{
 		URL: auth.ServerAddress,
 		Client: &http.Client{
-			Transport: reg.WrapTransport(http.DefaultTransport, auth.ServerAddress, auth.Username, auth.Password),
+			Transport: reg.WrapTransport(transport, auth.ServerAddress, auth.Username, auth.Password),
 		},
 		Logf: reg.Log,
 	}
@@ -139,5 +146,5 @@ func GetLabels(hub *reg.Registry, ref ImageRef, mf interface{}) (map[string]stri
 		}
 		return result, nil
 	}
-	return nil, errors.New("image manifest must of v2 format")
+	return nil, ErrManifestV2Required
 }

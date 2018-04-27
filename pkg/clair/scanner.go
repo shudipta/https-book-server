@@ -1,14 +1,16 @@
 package clair
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"net/http"
+	"time"
 
+	reg "github.com/appscode/docker-registry-client/registry"
 	"github.com/coreos/clair/api/v3/clairpb"
 	manifestV1 "github.com/docker/distribution/manifest/schema1"
 	manifestV2 "github.com/docker/distribution/manifest/schema2"
-	reg "github.com/heroku/docker-registry-client/registry"
 	"github.com/pkg/errors"
 	api "github.com/soter/scanner/apis/scanner/v1alpha1"
 )
@@ -25,7 +27,7 @@ import (
 // For more information about LayerType{}, https://coreos.com/clair/docs/latest/api_v1.html
 // will be helpful.
 func IsVulnerable(
-	clairAddress string,
+	clairAncestryServiceClient clairpb.AncestryServiceClient,
 	registryUrl, imageName, username, password string) ([]api.Feature, []api.Vulnerability, error) {
 
 	// TODO: need to check for digest part
@@ -86,21 +88,26 @@ func IsVulnerable(
 		fmt.Println("Analyzing", layersLen, "layers")
 	}
 
-	clairClient, err := clairClientSetup(clairAddress)
-	if err != nil {
-		return nil, nil, WithCode(errors.Wrapf(err, "failed to connect"), ConnectingClairClientError)
-	}
-
-	err = sendLayer(postAncestryRequest, clairClient)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+	_, err = clairAncestryServiceClient.PostAncestry(ctx, postAncestryRequest)
 	if err != nil {
 		return nil, nil, WithCode(errors.Wrapf(err, "failed to send layers for image %s", imageName), PostAncestryError)
 	}
 
-	features, vulnerabilities, err := getLayer(repo, clairClient)
+	ctx, cancel = context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+	resp, err := clairAncestryServiceClient.GetAncestry(ctx, &clairpb.GetAncestryRequest{
+		AncestryName:        repo,
+		WithFeatures:        true,
+		WithVulnerabilities: true,
+	})
 	if err != nil {
 		return nil, nil, WithCode(errors.Wrapf(err, "failed to get features and vulnerabilities for image %s", imageName), GetAncestryError)
 	}
 
+	features := getFeatures(resp)
+	vulnerabilities := getVulnerabilities(resp)
 	if vulnerabilities != nil {
 		return features, vulnerabilities, WithCode(errors.Errorf("Image %s contains vulnerabilities", imageName), VulnerableStatus)
 	}

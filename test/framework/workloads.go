@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	workload "github.com/appscode/kubernetes-webhook-util/apis/workload/v1"
+	workload "github.com/appscode/kubernetes-webhook-util/client/workload/v1"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -219,9 +219,14 @@ func (f *Invocation) NewWorkload(
 }
 
 func (f *Invocation) EventuallyCreateWithVulnerableImage(root *Framework, obj runtime.Object) GomegaAsyncAssertion {
+	wc, err := workload.NewForConfig(root.ClientConfig)
+	Expect(err).NotTo(HaveOccurred())
+	w, err := workload.ConvertToWorkload(obj)
+	Expect(err).NotTo(HaveOccurred())
+
 	return Eventually(
 		func() bool {
-			err := workload.Create(root.KubeClient, obj)
+			_, err := wc.Workloads(w.Namespace).Create(w)
 			Expect(err).To(HaveOccurred())
 
 			return strings.Contains(err.Error(), "contains vulnerabilities")
@@ -232,9 +237,14 @@ func (f *Invocation) EventuallyCreateWithVulnerableImage(root *Framework, obj ru
 }
 
 func (f *Invocation) EventuallyUpdateWithVulnerableImage(root *Framework, obj runtime.Object) GomegaAsyncAssertion {
+	wc, err := workload.NewForConfig(root.ClientConfig)
+	Expect(err).NotTo(HaveOccurred())
+	w, err := workload.ConvertToWorkload(obj)
+	Expect(err).NotTo(HaveOccurred())
+
 	return Eventually(
 		func() bool {
-			err := workload.Update(root.KubeClient, obj)
+			_, err := wc.Workloads(w.Namespace).Update(w)
 			Expect(err).To(HaveOccurred())
 
 			return strings.Contains(err.Error(), "contains vulnerabilities")
@@ -245,9 +255,15 @@ func (f *Invocation) EventuallyUpdateWithVulnerableImage(root *Framework, obj ru
 }
 
 func (f *Invocation) EventuallyCreateWithNonVulnerableImage(root *Framework, obj runtime.Object) GomegaAsyncAssertion {
+	wc, err := workload.NewForConfig(root.ClientConfig)
+	Expect(err).NotTo(HaveOccurred())
+	w, err := workload.ConvertToWorkload(obj)
+	Expect(err).NotTo(HaveOccurred())
+
 	return Eventually(
 		func() error {
-			return workload.Create(root.KubeClient, obj)
+			_, err := wc.Workloads(w.Namespace).Create(w)
+			return err
 		},
 		time.Minute*5,
 		time.Millisecond*5,

@@ -9,21 +9,24 @@ import (
 )
 
 type ExtraOptions struct {
-	ClairAddress string
-	QPS          float64
-	Burst        int
+	ClairAddress    string
+	ClairApiCertDir string
+	QPS             float64
+	Burst           int
 }
 
 func NewExtraOptions() *ExtraOptions {
 	return &ExtraOptions{
-		ClairAddress: "http://clair.default.svc:6060",
-		QPS:          100,
-		Burst:        100,
+		ClairAddress:    "http://clairsvc.default.svc:6060",
+		ClairApiCertDir: "/var/clairapi-client-cert/",
+		QPS:             100,
+		Burst:           100,
 	}
 }
 
 func (s *ExtraOptions) AddGoFlags(fs *flag.FlagSet) {
-	fs.StringVar(&s.ClairAddress, "clair-addr", s.ClairAddress, "The maximum QPS to the master from this client")
+	fs.StringVar(&s.ClairAddress, "clair-addr", s.ClairAddress, "The address where clair is running")
+	fs.StringVar(&s.ClairApiCertDir, "api-cert-dir", s.ClairApiCertDir, "The directory where necessary certificates for clair api are stored")
 
 	fs.Float64Var(&s.QPS, "qps", s.QPS, "The maximum QPS to the master from this client")
 	fs.IntVar(&s.Burst, "burst", s.Burst, "The maximum burst for throttle")
@@ -39,6 +42,8 @@ func (s *ExtraOptions) ApplyTo(cfg *controller.Config) error {
 	var err error
 
 	cfg.ClairAddress = s.ClairAddress
+	cfg.ClairApiCertDir = s.ClairApiCertDir
+
 	cfg.ClientConfig.QPS = float32(s.QPS)
 	cfg.ClientConfig.Burst = s.Burst
 

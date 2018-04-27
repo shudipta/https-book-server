@@ -1,12 +1,9 @@
 package controller
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	workload "github.com/appscode/kubernetes-webhook-util/apis/workload/v1"
@@ -19,7 +16,6 @@ import (
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	api "github.com/soter/scanner/apis/scanner/v1alpha1"
-	"github.com/soter/scanner/pkg/clair"
 	"google.golang.org/grpc"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,6 +29,9 @@ type Controller struct {
 
 	client   kubernetes.Interface
 	recorder record.EventRecorder
+
+	ClairAncestryServiceClient     clairpb.AncestryServiceClient
+	ClairNotificationServiceClient clairpb.NotificationServiceClient
 }
 
 // ref: https://github.com/docker/cli/blob/master/vendor/github.com/docker/docker/api/types/auth.go
@@ -75,6 +74,31 @@ type Image struct {
 	schemaVersion int
 }
 
+// checkContainers() checks vulnerabilities for each images used in containers.
+// Here, precache parameter indicates that checking is being done for storing
+// vulnerabilities and features of each image layer into cache. Otherwise,
+// if precache is false then
+// 		if any image is vulnerable then
+//           this method returns
+// This method takes namespace_name <namespace> of provided secrets <secretNames> and image name
+// of a docker image. For each secret, it reads the config data of secret and store it to
+// auth variable (map[string]map[string]AuthConfig)
+// we need this type to store config data, because original config date is in following format:
+// {
+//   "auths":{
+// 	   <api url>:{
+// 	 	 "username":<username>,
+// 	 	 "password":<password>,
+// 	 	 "email":<email>,
+// 	 	 "auth":<auth token>
+// 	   }
+// 	 }
+// }
+// Then it scans to find vulnerabilities in the image for all credentials. It returns
+// 			(true, error); if any error occured
+// 			(false, nil); if no vulnerability exists
+// If the image is not found with the secret info, then it tries with the public docker
+// url="https://registry-1.docker.io/"
 func (c *Controller) CheckWorkload(w *workload.Workload) (*workload.Workload, bool, error) {
 	var pullSecrets []core.Secret
 	for _, ref := range w.Spec.Template.Spec.ImagePullSecrets {
@@ -149,27 +173,28 @@ func (c *Controller) CheckWorkload(w *workload.Workload) (*workload.Workload, bo
 		}
 		glog.Infoln("Analyzing", layersLen, "layers")
 
-		clairClient, err := clairClientSetup(c.ClairAddress)
-		if err != nil {
-			return nil, false, errors.Wrapf(err, "failed to connect")
-		}
-
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 		defer cancel()
-		_, err = clairClient.PostAncestry(ctx, req)
+		_, err = c.ClairAncestryServiceClient.PostAncestry(ctx, req)
 		if err != nil {
 			return nil, false, errors.Wrapf(err, "failed to send layers for image %s", ref)
 		}
 
 		ctx, cancel = context.WithTimeout(context.Background(), 5*time.Minute)
 		defer cancel()
-		_, err = clairClient.GetAncestry(ctx, &clairpb.GetAncestryRequest{
+		resp, err := c.ClairAncestryServiceClient.GetAncestry(ctx, &clairpb.GetAncestryRequest{
+			//AncestryName:        ref.Repository,
 			AncestryName:        ref.String(),
 			WithFeatures:        true,
 			WithVulnerabilities: true,
 		})
 		if err != nil {
 			return nil, false, err
+		}
+
+		vulnerabilities := GetVulnerabilities(resp)
+		if len(vulnerabilities) > 0 {
+			return nil, false, fmt.Errorf("Image %s contains vulnerabilities", ref)
 		}
 		// if resp.Ancestry.Features
 		// 	return getFeatures(resp), getVulnerabilities(resp), nil
@@ -185,9 +210,12 @@ func hashPart(digest string) string {
 	return digest[7:]
 }
 
-func getVulnerabilities(res *clairpb.GetAncestryResponse) []api.Vulnerability {
+func GetVulnerabilities(resp *clairpb.GetAncestryResponse) []api.Vulnerability {
 	var vuls []api.Vulnerability
-	for _, feature := range res.Ancestry.Features {
+	if resp == nil {
+		return nil
+	}
+	for _, feature := range resp.Ancestry.Features {
 		for _, vul := range feature.Vulnerabilities {
 			vuls = append(vuls, api.Vulnerability{
 				Name:          vul.Name,
@@ -204,9 +232,12 @@ func getVulnerabilities(res *clairpb.GetAncestryResponse) []api.Vulnerability {
 	return vuls
 }
 
-func getFeatures(res *clairpb.GetAncestryResponse) []api.Feature {
+func getFeatures(resp *clairpb.GetAncestryResponse) []api.Feature {
 	var fs []api.Feature
-	for _, feature := range res.Ancestry.Features {
+	if resp == nil {
+		return nil
+	}
+	for _, feature := range resp.Ancestry.Features {
 		fs = append(fs, api.Feature{
 			Name:          feature.Name,
 			NamespaceName: feature.NamespaceName,
@@ -215,112 +246,6 @@ func getFeatures(res *clairpb.GetAncestryResponse) []api.Feature {
 	}
 
 	return fs
-}
-
-// checkContainers() checks vulnerabilities for each images used in containers.
-// Here, precache parameter indicates that checking is being done for storing
-// vulnerabilities and features of each image layer into cache. Otherwise,
-// if precache is false then
-// 		if any image is vulnerable then
-//           this method returns
-func (c *Controller) CheckContainers(
-	namespace string, containers []core.Container, secretNames []string) (bool, error) {
-	for _, cont := range containers {
-		_, _, err := c.CheckImage(namespace, cont.Image, secretNames)
-		vulnerable := err != nil
-		if vulnerable {
-			return false, err
-		}
-	}
-	return true, nil
-}
-
-// This method takes namespace_name <namespace> of provided secrets <secretNames> and image name
-// of a docker image. For each secret, it reads the config data of secret and store it to
-// auth variable (map[string]map[string]AuthConfig)
-// we need this type to store config data, because original config date is in following format:
-// {
-//   "auths":{
-// 	   <api url>:{
-// 	 	 "username":<username>,
-// 	 	 "password":<password>,
-// 	 	 "email":<email>,
-// 	 	 "auth":<auth token>
-// 	   }
-// 	 }
-// }
-// Then it scans to find vulnerabilities in the image for all credentials. It returns
-// 			(true, error); if any error occured
-// 			(false, nil); if no vulnerability exists
-// If the image is not found with the secret info, then it tries with the public docker
-// url="https://registry-1.docker.io/"
-func (c *Controller) CheckImage(
-	namespace, image string,
-	secretNames []string) ([]api.Feature, []api.Vulnerability, error) {
-
-	for _, item := range secretNames {
-		secret, err := c.client.CoreV1().Secrets(namespace).Get(item, metav1.GetOptions{})
-		if err != nil {
-			return nil, nil, clair.WithCode(errors.Wrapf(err, "failed to read secret %s", item), clair.GettingSecretError)
-		}
-
-		var configData []byte
-		for _, val := range secret.Data {
-			configData = append(configData, val...)
-			break
-		}
-
-		var configFile map[string]map[string]AuthConfig
-		err = json.NewDecoder(bytes.NewReader(configData)).Decode(&configFile)
-		if err != nil {
-			return nil, nil, clair.WithCode(errors.Wrapf(err, "failed to decode configData of secret %s", item), clair.DecodingConfigDataError)
-		}
-
-		for key, val := range configFile["auths"] {
-			features, vulnerabilities, err := clair.IsVulnerable(c.ClairAddress, key, image, val.Username, val.Password)
-			if err == nil || err.(*clair.ErrorWithCode).Code() > clair.GettingManifestError {
-				return features, vulnerabilities, err
-			}
-			break
-		}
-	}
-
-	registryUrl := "https://registry-1.docker.io"
-	username := "" // anonymous
-	password := "" // anonymous
-
-	features, vulnerabilities, err := clair.IsVulnerable(c.ClairAddress, registryUrl, image, username, password)
-	imageErr := err.(*clair.ErrorWithCode)
-	if imageErr.Code() < clair.BearerTokenRequestError {
-		return features, vulnerabilities, clair.WithCode(errors.Wrap(err, "incorrect secrets"), imageErr.Code())
-	}
-
-	return features, vulnerabilities, err
-}
-
-// ref: https://github.com/docker/cli/blob/6c9232a5682cbfffc6a53ebb8ec9bfbb4b55381d/cli/config/configfile/file.go#L228
-// decodeAuth decodes a base64 encoded string and returns username and password
-func decodeAuth(authStr string) (string, string, error) {
-	if authStr == "" {
-		return "", "", nil
-	}
-
-	decLen := base64.StdEncoding.DecodedLen(len(authStr))
-	decoded := make([]byte, decLen)
-	authByte := []byte(authStr)
-	n, err := base64.StdEncoding.Decode(decoded, authByte)
-	if err != nil {
-		return "", "", err
-	}
-	if n > decLen {
-		return "", "", errors.Errorf("Something went wrong decoding auth config")
-	}
-	arr := strings.SplitN(string(decoded), ":", 2)
-	if len(arr) != 2 {
-		return "", "", errors.Errorf("Invalid auth configuration file")
-	}
-	password := strings.Trim(arr[1], "\x00")
-	return arr[0], password, nil
 }
 
 func clairClientSetup(clairAddress string) (clairpb.AncestryServiceClient, error) {

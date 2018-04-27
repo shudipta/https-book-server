@@ -10,14 +10,14 @@ import (
 	shell "github.com/codeskyblue/go-sh"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	srvr "github.com/soter/scanner/pkg/cmds/server"
+	"github.com/soter/scanner/pkg/cmds/server"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	kapi "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 )
 
-func (f *Framework) NewScannerOptions(kubeConfigPath string, extraOptions *srvr.ExtraOptions) *srvr.ScannerOptions {
-	opts := srvr.NewScannerOptions(os.Stdout, os.Stderr)
+func (f *Framework) NewScannerOptions(kubeConfigPath string, extraOptions *server.ExtraOptions) *server.ScannerOptions {
+	opts := server.NewScannerOptions(os.Stdout, os.Stderr)
 	opts.RecommendedOptions.Authentication.RemoteKubeConfigFile = kubeConfigPath
 	//opts.RecommendedOptions.Authentication.SkipInClusterLookup = true
 	opts.RecommendedOptions.Authorization.RemoteKubeConfigFile = kubeConfigPath
@@ -31,7 +31,8 @@ func (f *Framework) NewScannerOptions(kubeConfigPath string, extraOptions *srvr.
 	return opts
 }
 
-func (f *Framework) StartAPIServerAndOperator(kubeConfigPath string, extraOptions *srvr.ExtraOptions) {
+func (f *Framework) StartAPIServerAndOperator(kubeConfigPath string, extraOptions *server.ExtraOptions) {
+	defer GinkgoRecover()
 	sh := shell.NewSession()
 	args := []interface{}{"--namespace", f.Namespace()}
 	cmd := filepath.Join("..", "..", "hack", "dev", "setup-server.sh")

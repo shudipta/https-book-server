@@ -5,9 +5,7 @@ import (
 
 	api "github.com/soter/scanner/apis/scanner/v1alpha1"
 	"github.com/soter/scanner/client/clientset/versioned"
-	"github.com/soter/scanner/pkg/clair"
 	"github.com/soter/scanner/pkg/controller"
-	"github.com/tamalsaha/go-oneliners"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	apirequest "k8s.io/apiserver/pkg/endpoints/request"
@@ -42,21 +40,21 @@ func (r *REST) GroupVersionKind(containingGV schema.GroupVersion) schema.GroupVe
 
 func (r *REST) Create(ctx apirequest.Context, obj runtime.Object, _ rest.ValidateObjectFunc, _ bool) (runtime.Object, error) {
 	req := obj.(*api.ImageReview)
-	ns := apirequest.NamespaceValue(ctx)
-	secretNames := controller.GetAllSecrets(req.Request.ImagePullSecrets)
-
-	features, vulnerabilities, err := r.controller.CheckImage(ns, req.Request.Image, secretNames)
-	if err.(*clair.ErrorWithCode).Code() != clair.VulnerableStatus &&
-		err.(*clair.ErrorWithCode).Code() != clair.NotVulnerableStatus {
-		return nil, err
-	}
-
-	req.Response = &api.ImageReviewResponse{
-		Features:        features,
-		Vulnerabilities: vulnerabilities,
-	}
-
-	oneliners.PrettyJson(req.Response)
+	//ns := apirequest.NamespaceValue(ctx)
+	//secretNames := controller.GetAllSecrets(req.Request.ImagePullSecrets)
+	//
+	//features, vulnerabilities, err := r.controller.CheckImage(ns, req.Request.Image, secretNames)
+	//if err.(*clair.ErrorWithCode).Code() != clair.VulnerableStatus &&
+	//	err.(*clair.ErrorWithCode).Code() != clair.NotVulnerableStatus {
+	//	return nil, err
+	//}
+	//
+	//req.Response = &api.ImageReviewResponse{
+	//	Features:        features,
+	//	Vulnerabilities: vulnerabilities,
+	//}
+	//
+	//oneliners.PrettyJson(req.Response)
 
 	return req, nil
 }
