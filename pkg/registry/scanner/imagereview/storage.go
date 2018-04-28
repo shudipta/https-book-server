@@ -27,8 +27,8 @@ type REST struct {
 	lock sync.RWMutex
 }
 
-var _ rest.Getter = &REST{}
 var _ rest.Creater = &REST{}
+var _ rest.Getter = &REST{}
 var _ rest.GroupVersionKindProvider = &REST{}
 
 func NewREST(config *restconfig.Config, ctl *controller.Controller) *REST {
@@ -104,27 +104,24 @@ func (r *REST) Get(ctx apirequest.Context, name string, options *metav1.GetOptio
 
 	delete(r.imageRefs, name)
 
-	features := getFeatures(resp)
-	vulnerabilities := getVulnerabilities(resp)
-
 	return &api.ImageReview{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: apirequest.NamespaceValue(ctx),
 		},
 		Response: &api.ImageReviewResponse{
-			Features:        features,
-			Vulnerabilities: vulnerabilities,
+			Features: getFeatures(resp),
 		},
 	}, nil
 }
 
-func getVulnerabilities(resp *clairpb.GetAncestryResponse) []api.Vulnerability {
-	var vuls []api.Vulnerability
+func getFeatures(resp *clairpb.GetAncestryResponse) []api.Feature {
+	var fs []api.Feature
 	if resp == nil {
 		return nil
 	}
 	for _, feature := range resp.Ancestry.Features {
+		var vuls []api.Vulnerability
 		for _, vul := range feature.Vulnerabilities {
 			vuls = append(vuls, api.Vulnerability{
 				Name:          vul.Name,
@@ -136,21 +133,12 @@ func getVulnerabilities(resp *clairpb.GetAncestryResponse) []api.Vulnerability {
 				FeatureName:   feature.Name,
 			})
 		}
-	}
 
-	return vuls
-}
-
-func getFeatures(resp *clairpb.GetAncestryResponse) []api.Feature {
-	var fs []api.Feature
-	if resp == nil {
-		return nil
-	}
-	for _, feature := range resp.Ancestry.Features {
 		fs = append(fs, api.Feature{
-			Name:          feature.Name,
-			NamespaceName: feature.NamespaceName,
-			Version:       feature.Version,
+			Name:            feature.Name,
+			NamespaceName:   feature.NamespaceName,
+			Version:         feature.Version,
+			Vulnerabilities: vuls,
 		})
 	}
 

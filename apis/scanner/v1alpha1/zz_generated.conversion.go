@@ -54,6 +54,7 @@ func autoConvert_v1alpha1_Feature_To_scanner_Feature(in *Feature, out *scanner.F
 	out.Name = in.Name
 	out.NamespaceName = in.NamespaceName
 	out.Version = in.Version
+	out.Vulnerabilities = *(*[]scanner.Vulnerability)(unsafe.Pointer(&in.Vulnerabilities))
 	return nil
 }
 
@@ -66,6 +67,7 @@ func autoConvert_scanner_Feature_To_v1alpha1_Feature(in *scanner.Feature, out *F
 	out.Name = in.Name
 	out.NamespaceName = in.NamespaceName
 	out.Version = in.Version
+	out.Vulnerabilities = *(*[]Vulnerability)(unsafe.Pointer(&in.Vulnerabilities))
 	return nil
 }
 
@@ -122,7 +124,6 @@ func Convert_scanner_ImageReviewRequest_To_v1alpha1_ImageReviewRequest(in *scann
 
 func autoConvert_v1alpha1_ImageReviewResponse_To_scanner_ImageReviewResponse(in *ImageReviewResponse, out *scanner.ImageReviewResponse, s conversion.Scope) error {
 	out.Features = *(*[]scanner.Feature)(unsafe.Pointer(&in.Features))
-	out.Vulnerabilities = *(*[]scanner.Vulnerability)(unsafe.Pointer(&in.Vulnerabilities))
 	return nil
 }
 
@@ -133,7 +134,6 @@ func Convert_v1alpha1_ImageReviewResponse_To_scanner_ImageReviewResponse(in *Ima
 
 func autoConvert_scanner_ImageReviewResponse_To_v1alpha1_ImageReviewResponse(in *scanner.ImageReviewResponse, out *ImageReviewResponse, s conversion.Scope) error {
 	out.Features = *(*[]Feature)(unsafe.Pointer(&in.Features))
-	out.Vulnerabilities = *(*[]Vulnerability)(unsafe.Pointer(&in.Vulnerabilities))
 	return nil
 }
 

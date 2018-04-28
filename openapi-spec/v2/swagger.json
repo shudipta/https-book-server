@@ -248,6 +248,12 @@
         },
         "Version": {
           "type": "string"
+        },
+        "vulnerabilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/com.github.soter.scanner.apis.scanner.v1alpha1.Vulnerability"
+          }
         }
       }
     },
@@ -304,20 +310,11 @@
           "items": {
             "$ref": "#/definitions/com.github.soter.scanner.apis.scanner.v1alpha1.Feature"
           }
-        },
-        "vulnerabilities": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/com.github.soter.scanner.apis.scanner.v1alpha1.Vulnerability"
-          }
         }
       }
     },
     "com.github.soter.scanner.apis.scanner.v1alpha1.Vulnerability": {
       "description": "Vulnerability represents vulnerability entity returned by Clair",
-      "required": [
-        "featureName"
-      ],
       "properties": {
         "Description": {
           "type": "string"

@@ -33,21 +33,20 @@ type Vulnerability struct {
 	//Metadata      map[string]interface{} `json:"Metadata,omitempty"`
 	FixedBy string `json:"FixedBy,omitempty"`
 	//FixedIn     []Feature `json:"FixedIn,omitempty"`
-	FeatureName string `json:"featureName",omitempty`
+	FeatureName string `json:"featureName,omitempty"`
 }
 
 type Feature struct {
 	Name          string `json:"Name,omitempty"`
 	NamespaceName string `json:"NamespaceName,omitempty"`
 	Version       string `json:"Version,omitempty"`
+	// +optional
+	Vulnerabilities []Vulnerability `json:"vulnerabilities,omitempty"`
 }
 
 type ImageReviewResponse struct {
 	// +optional
 	Features []Feature `json:"features,omitempty"`
-
-	// +optional
-	Vulnerabilities []Vulnerability `json:"vulnerabilities,omitempty"`
 }
 
 const (

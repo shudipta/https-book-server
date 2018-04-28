@@ -29,14 +29,13 @@ type Feature struct {
 	Name          string
 	NamespaceName string
 	Version       string
+	// +optional
+	Vulnerabilities []Vulnerability
 }
 
 type ImageReviewResponse struct {
 	// +optional
 	Features []Feature
-
-	// +optional
-	Vulnerabilities []Vulnerability
 }
 
 // +genclient

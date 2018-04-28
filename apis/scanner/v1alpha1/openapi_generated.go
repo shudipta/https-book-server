@@ -51,10 +51,23 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Format: "",
 							},
 						},
+						"vulnerabilities": {
+							SchemaProps: spec.SchemaProps{
+								Type: []string{"array"},
+								Items: &spec.SchemaOrArray{
+									Schema: &spec.Schema{
+										SchemaProps: spec.SchemaProps{
+											Ref: ref("github.com/soter/scanner/apis/scanner/v1alpha1.Vulnerability"),
+										},
+									},
+								},
+							},
+						},
 					},
 				},
 			},
-			Dependencies: []string{},
+			Dependencies: []string{
+				"github.com/soter/scanner/apis/scanner/v1alpha1.Vulnerability"},
 		},
 		"github.com/soter/scanner/apis/scanner/v1alpha1.ImageReview": {
 			Schema: spec.Schema{
@@ -148,23 +161,11 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								},
 							},
 						},
-						"vulnerabilities": {
-							SchemaProps: spec.SchemaProps{
-								Type: []string{"array"},
-								Items: &spec.SchemaOrArray{
-									Schema: &spec.Schema{
-										SchemaProps: spec.SchemaProps{
-											Ref: ref("github.com/soter/scanner/apis/scanner/v1alpha1.Vulnerability"),
-										},
-									},
-								},
-							},
-						},
 					},
 				},
 			},
 			Dependencies: []string{
-				"github.com/soter/scanner/apis/scanner/v1alpha1.Feature", "github.com/soter/scanner/apis/scanner/v1alpha1.Vulnerability"},
+				"github.com/soter/scanner/apis/scanner/v1alpha1.Feature"},
 		},
 		"github.com/soter/scanner/apis/scanner/v1alpha1.Vulnerability": {
 			Schema: spec.Schema{
@@ -216,7 +217,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 							},
 						},
 					},
-					Required: []string{"featureName"},
 				},
 			},
 			Dependencies: []string{},

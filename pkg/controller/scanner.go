@@ -52,16 +52,6 @@ func (c *Controller) ScanCluster() error {
 	return utilerrors.NewAggregate(errs)
 }
 
-// Image represents Docker image
-type Image struct {
-	Ref  docker.ImageRef
-	Auth *dockertypes.AuthConfig
-
-	FsLayers      []string
-	digest        string
-	schemaVersion int
-}
-
 // checkContainers() checks vulnerabilities for each images used in containers.
 // Here, precache parameter indicates that checking is being done for storing
 // vulnerabilities and features of each image layer into cache. Otherwise,
