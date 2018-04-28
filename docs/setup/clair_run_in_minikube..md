@@ -158,13 +158,13 @@ $ export CLAIR_API_SERVER_CERT=$(cat clair-cert/server.crt | $ONESSL base64)
 $ export CLAIR_API_SERVER_KEY=$(cat clair-cert/server.key | $ONESSL base64)
 
 # Running clair
-$ kubectl create secret generic clairsecret --from-file=docs/examples/clair/config.yaml
+$ kubectl create secret generic clairsecret --from-file=docs/examples/clair/config-tls.yaml
 secret "clairsecret" created
 
 $ kubectl label secret clairsecret app=clair
 secret "clairsecret" labeled
 
-$ cat docs/examples/clair/clair-kubernetes.yaml | $ONESSL envsubst | kubectl apply -f -
+$ cat docs/examples/clair/clair-kubernetes-tls.yaml | $ONESSL envsubst | kubectl apply -f -
 service "clairsvc" created
 replicationcontroller "clair" created
 replicationcontroller "clair-postgres" created

@@ -31,9 +31,7 @@ else
 fi
 
 rm -rf $ONESSL ca.crt ca.key server.crt server.key client@client.crt client@client.key
-pushd $GOPATH/src/github.com/soter/scanner/clair-cert
-rm -rf $ONESSL ca.crt ca.key server.crt server.key client@soter.ac.crt client@soter.ac.key
-popd
+rm -rf clair-cert/
 
 echo "creating necessary certificate-key pairs"
 

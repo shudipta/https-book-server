@@ -45,6 +45,7 @@ func (in *Feature) DeepCopy() *Feature {
 func (in *ImageReview) DeepCopyInto(out *ImageReview) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
+	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
 	if in.Request != nil {
 		in, out := &in.Request, &out.Request
 		if *in == nil {

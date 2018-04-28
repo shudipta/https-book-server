@@ -56,7 +56,7 @@ spec:
         image: quay.io/coreos/clair-git:latest
         args:
           - "-config"
-          - "/config/config.yaml"
+          - "/config/config-tls.yaml"
         ports:
         - containerPort: 6060
         - containerPort: 6061

@@ -46,11 +46,12 @@ func (c *Config) New() (*Controller, error) {
 	ctrl := &Controller{
 		config: c.config,
 
-		client:   c.KubeClient,
+		Client:   c.KubeClient,
 		recorder: eventer.NewEventRecorder(c.KubeClient, "soter-scanner"),
 
 		ClairAncestryServiceClient:     clairAncestryServiceClient,
 		ClairNotificationServiceClient: clairNotificationServiceClient,
 	}
+
 	return ctrl, nil
 }

@@ -75,6 +75,11 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Format:      "",
 							},
 						},
+						"metadata": {
+							SchemaProps: spec.SchemaProps{
+								Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+							},
+						},
 						"request": {
 							SchemaProps: spec.SchemaProps{
 								Ref: ref("github.com/soter/scanner/apis/scanner/v1alpha1.ImageReviewRequest"),
@@ -89,7 +94,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{
-				"github.com/soter/scanner/apis/scanner/v1alpha1.ImageReviewRequest", "github.com/soter/scanner/apis/scanner/v1alpha1.ImageReviewResponse"},
+				"github.com/soter/scanner/apis/scanner/v1alpha1.ImageReviewRequest", "github.com/soter/scanner/apis/scanner/v1alpha1.ImageReviewResponse", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 		},
 		"github.com/soter/scanner/apis/scanner/v1alpha1.ImageReviewRequest": {
 			Schema: spec.Schema{

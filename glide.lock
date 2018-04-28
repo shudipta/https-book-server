@@ -1,5 +1,5 @@
 hash: 6263469f33edc8b0808ec9a47406ad13c06f8ffc272ec40c3c9dc37d51d264a4
-updated: 2018-04-27T11:50:45.147712708-07:00
+updated: 2018-04-28T09:47:12.58712622-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -242,7 +242,7 @@ imports:
 - name: github.com/google/gofuzz
   version: 44d81051d367757e1c7c6a5a86423ece9afcf63c
 - name: github.com/google/uuid
-  version: dec09d789f3dba190787f8b4454c7d3c936fed9e
+  version: 064e2069ce9c359c118179501254f67d7d37ba24
 - name: github.com/googleapis/gnostic
   version: 0c5108395e2debce0d731cf0287ddf7242066aba
   subpackages:

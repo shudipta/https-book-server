@@ -75,6 +75,7 @@ func Convert_scanner_Feature_To_v1alpha1_Feature(in *scanner.Feature, out *Featu
 }
 
 func autoConvert_v1alpha1_ImageReview_To_scanner_ImageReview(in *ImageReview, out *scanner.ImageReview, s conversion.Scope) error {
+	out.ObjectMeta = in.ObjectMeta
 	out.Request = (*scanner.ImageReviewRequest)(unsafe.Pointer(in.Request))
 	out.Response = (*scanner.ImageReviewResponse)(unsafe.Pointer(in.Response))
 	return nil
@@ -86,6 +87,7 @@ func Convert_v1alpha1_ImageReview_To_scanner_ImageReview(in *ImageReview, out *s
 }
 
 func autoConvert_scanner_ImageReview_To_v1alpha1_ImageReview(in *scanner.ImageReview, out *ImageReview, s conversion.Scope) error {
+	out.ObjectMeta = in.ObjectMeta
 	out.Request = (*ImageReviewRequest)(unsafe.Pointer(in.Request))
 	out.Response = (*ImageReviewResponse)(unsafe.Pointer(in.Response))
 	return nil

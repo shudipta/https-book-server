@@ -17,6 +17,8 @@ package v1alpha1
 
 import (
 	v1alpha1 "github.com/soter/scanner/apis/scanner/v1alpha1"
+	scheme "github.com/soter/scanner/client/clientset/versioned/scheme"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	rest "k8s.io/client-go/rest"
 )
 
@@ -29,6 +31,7 @@ type ImageReviewsGetter interface {
 // ImageReviewInterface has methods to work with ImageReview resources.
 type ImageReviewInterface interface {
 	Create(*v1alpha1.ImageReview) (*v1alpha1.ImageReview, error)
+	Get(name string, options v1.GetOptions) (*v1alpha1.ImageReview, error)
 	ImageReviewExpansion
 }
 
@@ -44,6 +47,19 @@ func newImageReviews(c *ScannerV1alpha1Client, namespace string) *imageReviews {
 		client: c.RESTClient(),
 		ns:     namespace,
 	}
+}
+
+// Get takes name of the imageReview, and returns the corresponding imageReview object, and an error if there is any.
+func (c *imageReviews) Get(name string, options v1.GetOptions) (result *v1alpha1.ImageReview, err error) {
+	result = &v1alpha1.ImageReview{}
+	err = c.client.Get().
+		Namespace(c.ns).
+		Resource("imagereviews").
+		Name(name).
+		VersionedParams(&options, scheme.ParameterCodec).
+		Do().
+		Into(result)
+	return
 }
 
 // Create takes the representation of a imageReview and creates it.  Returns the server's representation of the imageReview, and an error, if there is any.

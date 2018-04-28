@@ -40,12 +40,13 @@ type ImageReviewResponse struct {
 }
 
 // +genclient
-// +genclient:skipVerbs=get,list,update,patch,delete,deleteCollection,watch
+// +genclient:skipVerbs=list,update,patch,delete,deleteCollection,watch
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // ImageReview describes a peer ping request/response.
 type ImageReview struct {
 	metav1.TypeMeta
+	metav1.ObjectMeta
 
 	// +optional
 	Request *ImageReviewRequest

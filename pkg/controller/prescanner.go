@@ -21,7 +21,7 @@ func (c *Controller) ScanCluster() error {
 }
 
 func (c *Controller) scanDeployments() (errs []error) {
-	objects, err := c.client.AppsV1().Deployments(metav1.NamespaceAll).List(metav1.ListOptions{})
+	objects, err := c.Client.AppsV1().Deployments(metav1.NamespaceAll).List(metav1.ListOptions{})
 	if err != nil {
 		errs = append(errs, err)
 		return
@@ -41,7 +41,7 @@ func (c *Controller) scanDeployments() (errs []error) {
 }
 
 func (c *Controller) scanReplicationControllers() (errs []error) {
-	objects, err := c.client.CoreV1().ReplicationControllers(metav1.NamespaceAll).List(metav1.ListOptions{})
+	objects, err := c.Client.CoreV1().ReplicationControllers(metav1.NamespaceAll).List(metav1.ListOptions{})
 	if err != nil {
 		errs = append(errs, err)
 		return
@@ -61,7 +61,7 @@ func (c *Controller) scanReplicationControllers() (errs []error) {
 }
 
 func (c *Controller) scanReplicaSets() (errs []error) {
-	objects, err := c.client.AppsV1().ReplicaSets(metav1.NamespaceAll).List(metav1.ListOptions{})
+	objects, err := c.Client.AppsV1().ReplicaSets(metav1.NamespaceAll).List(metav1.ListOptions{})
 	if err != nil {
 		errs = append(errs, err)
 		return
@@ -81,7 +81,7 @@ func (c *Controller) scanReplicaSets() (errs []error) {
 }
 
 func (c *Controller) scanDaemonSets() (errs []error) {
-	objects, err := c.client.AppsV1().DaemonSets(metav1.NamespaceAll).List(metav1.ListOptions{})
+	objects, err := c.Client.AppsV1().DaemonSets(metav1.NamespaceAll).List(metav1.ListOptions{})
 	if err != nil {
 		errs = append(errs, err)
 		return
@@ -101,7 +101,7 @@ func (c *Controller) scanDaemonSets() (errs []error) {
 }
 
 func (c *Controller) scanJobs() (errs []error) {
-	objects, err := c.client.BatchV1().Jobs(metav1.NamespaceAll).List(metav1.ListOptions{})
+	objects, err := c.Client.BatchV1().Jobs(metav1.NamespaceAll).List(metav1.ListOptions{})
 	if err != nil {
 		errs = append(errs, err)
 		return
@@ -121,7 +121,7 @@ func (c *Controller) scanJobs() (errs []error) {
 }
 
 func (c *Controller) scanCronJobs() (errs []error) {
-	objects, err := c.client.BatchV1beta1().CronJobs(metav1.NamespaceAll).List(metav1.ListOptions{})
+	objects, err := c.Client.BatchV1beta1().CronJobs(metav1.NamespaceAll).List(metav1.ListOptions{})
 	if err != nil {
 		errs = append(errs, err)
 		return
@@ -141,7 +141,7 @@ func (c *Controller) scanCronJobs() (errs []error) {
 }
 
 func (c *Controller) scanStatefulSets() (errs []error) {
-	objects, err := c.client.AppsV1().StatefulSets(metav1.NamespaceAll).List(metav1.ListOptions{})
+	objects, err := c.Client.AppsV1().StatefulSets(metav1.NamespaceAll).List(metav1.ListOptions{})
 	if err != nil {
 		errs = append(errs, err)
 		return

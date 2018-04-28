@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"sync"
 	"time"
 
 	workload "github.com/appscode/kubernetes-webhook-util/apis/workload/v1"
@@ -15,23 +16,24 @@ import (
 	dockertypes "github.com/docker/docker/api/types"
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
-	api "github.com/soter/scanner/apis/scanner/v1alpha1"
-	"google.golang.org/grpc"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/kubernetes/pkg/credentialprovider"
 )
 
 type Controller struct {
 	config
 
-	client   kubernetes.Interface
+	Client   kubernetes.Interface
 	recorder record.EventRecorder
 
 	ClairAncestryServiceClient     clairpb.AncestryServiceClient
 	ClairNotificationServiceClient clairpb.NotificationServiceClient
+
+	lock sync.RWMutex
 }
 
 // ref: https://github.com/docker/cli/blob/master/vendor/github.com/docker/docker/api/types/auth.go
@@ -100,9 +102,12 @@ type Image struct {
 // If the image is not found with the secret info, then it tries with the public docker
 // url="https://registry-1.docker.io/"
 func (c *Controller) CheckWorkload(w *workload.Workload) (*workload.Workload, bool, error) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
 	var pullSecrets []core.Secret
 	for _, ref := range w.Spec.Template.Spec.ImagePullSecrets {
-		secret, err := c.client.CoreV1().Secrets(w.Namespace).Get(ref.Name, metav1.GetOptions{})
+		secret, err := c.Client.CoreV1().Secrets(w.Namespace).Get(ref.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, false, err
 		}
@@ -128,50 +133,10 @@ func (c *Controller) CheckWorkload(w *workload.Workload) (*workload.Workload, bo
 			return nil, false, err
 		}
 
-		_, auth, mf, err := docker.PullManifest(ref, keyring)
+		req, err := c.MakePostAncestryRequest(ref, keyring)
 		if err != nil {
 			return nil, false, err
 		}
-
-		headers := map[string]string{}
-		if auth.Username != "" && auth.Password != "" {
-			headers["Authorization"] = "Basic " + base64.StdEncoding.EncodeToString([]byte(auth.Username+":"+auth.Password))
-		}
-
-		req := &clairpb.PostAncestryRequest{
-			AncestryName: ref.String(),
-			Format:       "Docker",
-		}
-		switch manifest := mf.(type) {
-		case *manifestV2.DeserializedManifest:
-			layers := make([]*clairpb.PostAncestryRequest_PostLayer, len(manifest.Layers))
-			for i, layer := range manifest.Layers {
-				layers[i] = &clairpb.PostAncestryRequest_PostLayer{
-					Hash:    hashPart(manifest.Config.Digest.String()) + hashPart(layer.Digest.String()),
-					Path:    fmt.Sprintf("%s/v2/%s/blobs/%s", auth.ServerAddress, ref.Repository, layer.Digest.String()),
-					Headers: headers,
-				}
-			}
-			req.Layers = layers
-		case *manifestV1.SignedManifest:
-			layers := make([]*clairpb.PostAncestryRequest_PostLayer, len(manifest.FSLayers))
-			for i, layer := range manifest.FSLayers {
-				layers[len(manifest.FSLayers)-1-i] = &clairpb.PostAncestryRequest_PostLayer{
-					Hash:    hashPart(layer.BlobSum.String()),
-					Path:    fmt.Sprintf("%s/v2/%s/blobs/%s", auth.ServerAddress, ref.Repository, layer.BlobSum.String()),
-					Headers: headers,
-				}
-			}
-			req.Layers = layers
-		default:
-			return nil, false, errors.New("unknown manifest type")
-		}
-
-		layersLen := len(req.Layers)
-		if layersLen == 0 {
-			return nil, false, errors.Wrapf(err, "failed to pull Layers for image %s", ref)
-		}
-		glog.Infoln("Analyzing", layersLen, "layers")
 
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 		defer cancel()
@@ -183,23 +148,69 @@ func (c *Controller) CheckWorkload(w *workload.Workload) (*workload.Workload, bo
 		ctx, cancel = context.WithTimeout(context.Background(), 5*time.Minute)
 		defer cancel()
 		resp, err := c.ClairAncestryServiceClient.GetAncestry(ctx, &clairpb.GetAncestryRequest{
-			//AncestryName:        ref.Repository,
 			AncestryName:        ref.String(),
 			WithFeatures:        true,
 			WithVulnerabilities: true,
 		})
 		if err != nil {
-			return nil, false, err
+			return nil, false, errors.Wrapf(err, "failed to get layers for image %s", ref)
 		}
 
-		vulnerabilities := GetVulnerabilities(resp)
-		if len(vulnerabilities) > 0 {
+		if hasVulnerabilities(resp) {
 			return nil, false, fmt.Errorf("Image %s contains vulnerabilities", ref)
 		}
-		// if resp.Ancestry.Features
-		// 	return getFeatures(resp), getVulnerabilities(resp), nil
 	}
+
 	return w, true, nil
+}
+
+func (c *Controller) MakePostAncestryRequest(ref docker.ImageRef, keyring credentialprovider.DockerKeyring) (*clairpb.PostAncestryRequest, error) {
+	_, auth, mf, err := docker.PullManifest(ref, keyring)
+	if err != nil {
+		return nil, err
+	}
+
+	headers := map[string]string{}
+	if auth.Username != "" && auth.Password != "" {
+		headers["Authorization"] = "Basic " + base64.StdEncoding.EncodeToString([]byte(auth.Username+":"+auth.Password))
+	}
+
+	req := &clairpb.PostAncestryRequest{
+		AncestryName: ref.String(),
+		Format:       "Docker",
+	}
+	switch manifest := mf.(type) {
+	case *manifestV2.DeserializedManifest:
+		layers := make([]*clairpb.PostAncestryRequest_PostLayer, len(manifest.Layers))
+		for i, layer := range manifest.Layers {
+			layers[i] = &clairpb.PostAncestryRequest_PostLayer{
+				Hash:    hashPart(manifest.Config.Digest.String()) + hashPart(layer.Digest.String()),
+				Path:    fmt.Sprintf("%s/v2/%s/blobs/%s", auth.ServerAddress, ref.Repository, layer.Digest.String()),
+				Headers: headers,
+			}
+		}
+		req.Layers = layers
+	case *manifestV1.SignedManifest:
+		layers := make([]*clairpb.PostAncestryRequest_PostLayer, len(manifest.FSLayers))
+		for i, layer := range manifest.FSLayers {
+			layers[len(manifest.FSLayers)-1-i] = &clairpb.PostAncestryRequest_PostLayer{
+				Hash:    hashPart(layer.BlobSum.String()),
+				Path:    fmt.Sprintf("%s/v2/%s/blobs/%s", auth.ServerAddress, ref.Repository, layer.BlobSum.String()),
+				Headers: headers,
+			}
+		}
+		req.Layers = layers
+	default:
+		return nil, errors.New("unknown manifest type")
+	}
+
+	layersLen := len(req.Layers)
+	if layersLen == 0 {
+		return nil, errors.Wrapf(err, "failed to pull Layers for image %s", ref)
+	}
+	glog.Infoln("Analyzing", layersLen, "layers")
+
+	return req, nil
 }
 
 func hashPart(digest string) string {
@@ -210,50 +221,15 @@ func hashPart(digest string) string {
 	return digest[7:]
 }
 
-func GetVulnerabilities(resp *clairpb.GetAncestryResponse) []api.Vulnerability {
-	var vuls []api.Vulnerability
+func hasVulnerabilities(resp *clairpb.GetAncestryResponse) bool {
 	if resp == nil {
-		return nil
+		return false
 	}
 	for _, feature := range resp.Ancestry.Features {
-		for _, vul := range feature.Vulnerabilities {
-			vuls = append(vuls, api.Vulnerability{
-				Name:          vul.Name,
-				NamespaceName: vul.NamespaceName,
-				Description:   vul.Description,
-				Link:          vul.Link,
-				Severity:      vul.Severity,
-				FixedBy:       vul.FixedBy,
-				FeatureName:   feature.Name,
-			})
+		if len(feature.Vulnerabilities) > 0 {
+			return true
 		}
 	}
 
-	return vuls
-}
-
-func getFeatures(resp *clairpb.GetAncestryResponse) []api.Feature {
-	var fs []api.Feature
-	if resp == nil {
-		return nil
-	}
-	for _, feature := range resp.Ancestry.Features {
-		fs = append(fs, api.Feature{
-			Name:          feature.Name,
-			NamespaceName: feature.NamespaceName,
-			Version:       feature.Version,
-		})
-	}
-
-	return fs
-}
-
-func clairClientSetup(clairAddress string) (clairpb.AncestryServiceClient, error) {
-	conn, err := grpc.Dial(clairAddress, grpc.WithInsecure())
-	if err != nil {
-		return nil, err
-	}
-
-	c := clairpb.NewAncestryServiceClient(conn)
-	return c, nil
+	return false
 }
