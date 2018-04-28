@@ -52,7 +52,7 @@ func (r *REST) Create(ctx apirequest.Context, obj runtime.Object, _ rest.Validat
 	namespace := apirequest.NamespaceValue(ctx)
 	var pullSecrets []core.Secret
 	for _, ref := range req.Request.ImagePullSecrets {
-		secret, err := r.controller.Client.CoreV1().Secrets(namespace).Get(ref.Name, metav1.GetOptions{})
+		secret, err := r.controller.KubeClient.CoreV1().Secrets(namespace).Get(ref.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
 		}

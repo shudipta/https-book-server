@@ -7,7 +7,9 @@ import (
 	"sync"
 	"time"
 
-	workload "github.com/appscode/kubernetes-webhook-util/apis/workload/v1"
+	utilerrors "github.com/appscode/go/util/errors"
+	wpi "github.com/appscode/kubernetes-webhook-util/apis/workload/v1"
+	wcs "github.com/appscode/kubernetes-webhook-util/client/workload/v1"
 	"github.com/appscode/kutil/tools/docker"
 	_ "github.com/appscode/kutil/tools/docker"
 	"github.com/coreos/clair/api/v3/clairpb"
@@ -27,13 +29,32 @@ import (
 type Controller struct {
 	config
 
-	Client   kubernetes.Interface
-	recorder record.EventRecorder
+	KubeClient     kubernetes.Interface
+	WorkloadClient wcs.Interface
+	recorder       record.EventRecorder
 
 	ClairAncestryServiceClient     clairpb.AncestryServiceClient
 	ClairNotificationServiceClient clairpb.NotificationServiceClient
 
 	lock sync.RWMutex
+}
+
+func (c *Controller) ScanCluster() error {
+	var errs []error
+
+	objects, err := c.WorkloadClient.Workloads(metav1.NamespaceAll).List(metav1.ListOptions{})
+	if err != nil {
+		errs = append(errs, err)
+	} else {
+		for i := range objects.Items {
+			_, _, err := c.CheckWorkload(&objects.Items[i])
+			if err != nil {
+				errs = append(errs, err)
+			}
+		}
+	}
+
+	return utilerrors.NewAggregate(errs)
 }
 
 // ref: https://github.com/docker/cli/blob/master/vendor/github.com/docker/docker/api/types/auth.go
@@ -56,14 +77,6 @@ type AuthConfig struct {
 
 	// RegistryToken is a bearer token to be sent to a registry
 	RegistryToken string `json:"registrytoken,omitempty"`
-}
-
-func GetAllSecrets(refs []core.LocalObjectReference) []string {
-	var names []string
-	for _, ref := range refs {
-		names = append(names, ref.Name)
-	}
-	return names
 }
 
 // Image represents Docker image
@@ -101,13 +114,13 @@ type Image struct {
 // 			(false, nil); if no vulnerability exists
 // If the image is not found with the secret info, then it tries with the public docker
 // url="https://registry-1.docker.io/"
-func (c *Controller) CheckWorkload(w *workload.Workload) (*workload.Workload, bool, error) {
+func (c *Controller) CheckWorkload(w *wpi.Workload) (*wpi.Workload, bool, error) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
 	var pullSecrets []core.Secret
 	for _, ref := range w.Spec.Template.Spec.ImagePullSecrets {
-		secret, err := c.Client.CoreV1().Secrets(w.Namespace).Get(ref.Name, metav1.GetOptions{})
+		secret, err := c.KubeClient.CoreV1().Secrets(w.Namespace).Get(ref.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, false, err
 		}
@@ -127,6 +140,9 @@ func (c *Controller) CheckWorkload(w *workload.Workload) (*workload.Workload, bo
 		images.Insert(c.Image)
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
 	for _, image := range images.List() {
 		ref, err := docker.ParseImageName(image)
 		if err != nil {
@@ -138,15 +154,11 @@ func (c *Controller) CheckWorkload(w *workload.Workload) (*workload.Workload, bo
 			return nil, false, err
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
-		defer cancel()
 		_, err = c.ClairAncestryServiceClient.PostAncestry(ctx, req)
 		if err != nil {
 			return nil, false, errors.Wrapf(err, "failed to send layers for image %s", ref)
 		}
 
-		ctx, cancel = context.WithTimeout(context.Background(), 5*time.Minute)
-		defer cancel()
 		resp, err := c.ClairAncestryServiceClient.GetAncestry(ctx, &clairpb.GetAncestryRequest{
 			AncestryName:        ref.String(),
 			WithFeatures:        true,
@@ -157,7 +169,7 @@ func (c *Controller) CheckWorkload(w *workload.Workload) (*workload.Workload, bo
 		}
 
 		if hasVulnerabilities(resp) {
-			return nil, false, fmt.Errorf("Image %s contains vulnerabilities", ref)
+			return nil, false, fmt.Errorf("image %s contains vulnerabilities", ref)
 		}
 	}
 

@@ -1,5 +1,5 @@
-hash: 6263469f33edc8b0808ec9a47406ad13c06f8ffc272ec40c3c9dc37d51d264a4
-updated: 2018-04-28T09:47:12.58712622-07:00
+hash: 6515bc700e8eb75069190ddf6eac2b8bae33460f1908dc8272dffacedff7236d
+updated: 2018-04-28T13:34:57.711945786-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -29,7 +29,7 @@ imports:
 - name: github.com/appscode/jsonpatch
   version: 58a38a46ddb591a543c6b1003213353e29331c5a
 - name: github.com/appscode/kubernetes-webhook-util
-  version: 9881179632fcd028577b57d8545e028020a884bb
+  version: 2c34ff27cf8b3df6f86cfc10a3934de13fcc9571
   subpackages:
   - admission
   - admission/v1beta1
@@ -40,6 +40,7 @@ imports:
 - name: github.com/appscode/kutil
   version: 2211bbe2c455d75d3b4e92d8389f3ba36eff6083
   subpackages:
+  - discovery
   - meta
   - openapi
   - tools/analytics
@@ -272,6 +273,10 @@ imports:
   - runtime
   - runtime/internal
   - utilities
+- name: github.com/hashicorp/go-version
+  version: 53932f80ddea12bea96be074f9fb2dc545806aba
+  repo: https://github.com/appscode/go-version.git
+  vcs: git
 - name: github.com/hashicorp/golang-lru
   version: a0d98a5f288019575c6d1f4bb1573fef2d1fcdc4
   subpackages:
@@ -454,7 +459,7 @@ imports:
   - jws
   - jwt
 - name: golang.org/x/sys
-  version: bb24a47a89eac6c1227fbcb2ae37a8b9ed323366
+  version: 95c6576299259db960f6c5b9b69ea52422860fce
   subpackages:
   - unix
   - windows

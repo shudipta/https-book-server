@@ -92,7 +92,7 @@ def lint():
 
 
 def gen():
-    return
+    die(call('go generate pkg/types/failurepolicy.go'))
 
 
 def build_cmd(name):
@@ -149,13 +149,13 @@ def update_registry():
 
 
 def install():
-    die(call('GO15VENDOREXPERIMENT=1 ' + libbuild.GOC + ' install ./cmd/...'))
+    die(call('GO15VENDOREXPERIMENT=1 ' + libbuild.GOC + ' install .'))
 
 
 def default():
     gen()
     fmt()
-    die(call('GO15VENDOREXPERIMENT=1 ' + libbuild.GOC + ' install ./cmd/...'))
+    die(call('GO15VENDOREXPERIMENT=1 ' + libbuild.GOC + ' install .'))
 
 
 def test(type, *args):

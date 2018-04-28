@@ -3,8 +3,10 @@ package controller
 import (
 	"fmt"
 
+	wcs "github.com/appscode/kubernetes-webhook-util/client/workload/v1"
 	"github.com/soter/scanner/pkg/clair"
 	"github.com/soter/scanner/pkg/eventer"
+	"github.com/soter/scanner/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -12,13 +14,15 @@ import (
 type config struct {
 	ClairAddress    string
 	ClairApiCertDir string
+	FailurePolicy   types.FailurePolicy
 }
 
 type Config struct {
 	config
 
-	ClientConfig *rest.Config
-	KubeClient   kubernetes.Interface
+	ClientConfig   *rest.Config
+	KubeClient     kubernetes.Interface
+	WorkloadClient wcs.Interface
 }
 
 func NewConfig(clientConfig *rest.Config) *Config {
@@ -46,8 +50,9 @@ func (c *Config) New() (*Controller, error) {
 	ctrl := &Controller{
 		config: c.config,
 
-		Client:   c.KubeClient,
-		recorder: eventer.NewEventRecorder(c.KubeClient, "soter-scanner"),
+		KubeClient:     c.KubeClient,
+		WorkloadClient: c.WorkloadClient,
+		recorder:       eventer.NewEventRecorder(c.KubeClient, "soter-scanner"),
 
 		ClairAncestryServiceClient:     clairAncestryServiceClient,
 		ClairNotificationServiceClient: clairNotificationServiceClient,
