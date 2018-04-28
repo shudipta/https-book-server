@@ -38,7 +38,7 @@ from os.path import expandvars, join, dirname
 libbuild.REPO_ROOT = libbuild.GOPATH + '/src/github.com/soter/scanner'
 BUILD_METADATA = libbuild.metadata(libbuild.REPO_ROOT)
 libbuild.BIN_MATRIX = {
-    'soter-scanner': {
+    'scanner': {
         'type': 'go',
         'go_version': True,
         'use_cgo': False,
@@ -75,19 +75,18 @@ def version():
 
 
 def fmt():
-    libbuild.ungroup_go_imports('apis', 'client', 'cmd', 'hack', 'pkg', 'test')
-    die(call('goimports -w apis client cmd hack pkg test'))
-    call('gofmt -s -w apis client cmd hack pkg test')
+    libbuild.ungroup_go_imports('apis', 'client', 'hack', 'pkg', 'test')
+    die(call('goimports -w apis client hack pkg test'))
+    call('gofmt -s -w apis client hack pkg test')
 
 
 def vet():
-    call('go vet ./apis/... ./client/... ./cmd/... ./pkg/... ./test/...')
+    call('go vet ./apis/... ./client/... ./pkg/... ./test/...')
 
 
 def lint():
     call('golint ./apis/...')
     call('golint ./client/...')
-    call('golint ./cmd/...')
     call('golint ./pkg/...')
     call('golint ./test/...')
 
@@ -98,7 +97,7 @@ def gen():
 
 def build_cmd(name):
     cfg = libbuild.BIN_MATRIX[name]
-    entrypoint="cmd/{0}/*.go".format(name)
+    entrypoint='*.go'
     compress = libbuild.ENV in ['prod']
     if cfg['type'] == 'go':
         if 'distro' in cfg:

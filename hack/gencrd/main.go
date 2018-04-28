@@ -32,7 +32,7 @@ func generateSwaggerJson() {
 		Scheme:   Scheme,
 		Codecs:   Codecs,
 		Info: spec.InfoProps{
-			Title:   "soter-scanner",
+			Title:   "Scanner",
 			Version: "v0",
 			Contact: &spec.ContactInfo{
 				Name:  "AppsCode Inc.",
