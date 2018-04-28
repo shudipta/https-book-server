@@ -24,6 +24,7 @@ scanner run [flags]
 ### Options
 
 ```
+      --api-cert-dir string                                     The directory where necessary certificates for clair api are stored (default "/var/clairapi-client-cert/")
       --audit-log-format string                                 Format of saved audits. "legacy" indicates 1-line text format for each event. "json" indicates structured json format. Requires the 'AdvancedAuditing' feature gate. Known formats are legacy,json. (default "json")
       --audit-log-maxage int                                    The maximum number of days to retain old audit log files based on the timestamp encoded in their filename.
       --audit-log-maxbackup int                                 The maximum number of old audit log files to retain.
@@ -47,10 +48,11 @@ scanner run [flags]
       --bind-address ip                                         The IP address on which to listen for the --secure-port port. The associated interface(s) must be reachable by the rest of the cluster, and by CLI/web clients. If blank, all interfaces will be used (0.0.0.0). (default 0.0.0.0)
       --burst int                                               The maximum burst for throttle (default 100)
       --cert-dir string                                         The directory where the TLS certs are located. If --tls-cert-file and --tls-private-key-file are provided, this flag will be ignored. (default "apiserver.local.config/certificates")
-      --clair-addr string                                       The maximum QPS to the master from this client (default "http://clair.default.svc:6060")
+      --clair-addr string                                       The address where clair is running (default "http://clairsvc.default.svc:6060")
       --client-ca-file string                                   If set, any request presenting a client certificate signed by one of the authorities in the client-ca-file is authenticated with an identity corresponding to the CommonName of the client certificate.
       --contention-profiling                                    Enable lock contention profiling, if profiling is enabled
       --enable-swagger-ui                                       Enables swagger ui on the apiserver at /swagger-ui
+      --failure-policy FailurePolicy                            Define how errors from the docker registry are handled. Allowed values are Ignore or Fail. (default Ignore)
   -h, --help                                                    help for run
       --kubeconfig string                                       kubeconfig file pointing at the 'core' kubernetes server.
       --profiling                                               Enable profiling via web interface host:port/debug/pprof/ (default true)

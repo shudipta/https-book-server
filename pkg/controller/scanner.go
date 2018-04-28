@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"sync"
 	"time"
 
 	utilerrors "github.com/appscode/go/util/errors"
@@ -16,14 +15,13 @@ import (
 	manifestV1 "github.com/docker/distribution/manifest/schema1"
 	manifestV2 "github.com/docker/distribution/manifest/schema2"
 	dockertypes "github.com/docker/docker/api/types"
-	"github.com/golang/glog"
 	"github.com/pkg/errors"
+	"github.com/soter/scanner/pkg/types"
 	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/kubernetes/pkg/credentialprovider"
 )
 
 type Controller struct {
@@ -35,8 +33,6 @@ type Controller struct {
 
 	ClairAncestryServiceClient     clairpb.AncestryServiceClient
 	ClairNotificationServiceClient clairpb.NotificationServiceClient
-
-	lock sync.RWMutex
 }
 
 func (c *Controller) ScanCluster() error {
@@ -47,36 +43,13 @@ func (c *Controller) ScanCluster() error {
 		errs = append(errs, err)
 	} else {
 		for i := range objects.Items {
-			_, _, err := c.CheckWorkload(&objects.Items[i])
-			if err != nil {
+			if err := c.checkWorkload(&objects.Items[i]); err != nil {
 				errs = append(errs, err)
 			}
 		}
 	}
 
 	return utilerrors.NewAggregate(errs)
-}
-
-// ref: https://github.com/docker/cli/blob/master/vendor/github.com/docker/docker/api/types/auth.go
-// AuthConfig contains authorization information for connecting to a Registry
-type AuthConfig struct {
-	Username string `json:"username,omitempty"`
-	Password string `json:"password,omitempty"`
-	Auth     string `json:"auth,omitempty"`
-
-	// Email is an optional value associated with the username.
-	// This field is deprecated and will be removed in a later
-	// version of docker.
-	Email string `json:"email,omitempty"`
-
-	ServerAddress string `json:"serveraddress,omitempty"`
-
-	// IdentityToken is used to authenticate the user and get
-	// an access token for the registry.
-	IdentityToken string `json:"identitytoken,omitempty"`
-
-	// RegistryToken is a bearer token to be sent to a registry
-	RegistryToken string `json:"registrytoken,omitempty"`
 }
 
 // Image represents Docker image
@@ -114,22 +87,19 @@ type Image struct {
 // 			(false, nil); if no vulnerability exists
 // If the image is not found with the secret info, then it tries with the public docker
 // url="https://registry-1.docker.io/"
-func (c *Controller) CheckWorkload(w *wpi.Workload) (*wpi.Workload, bool, error) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-
+func (c *Controller) checkWorkload(w *wpi.Workload) error {
 	var pullSecrets []core.Secret
 	for _, ref := range w.Spec.Template.Spec.ImagePullSecrets {
 		secret, err := c.KubeClient.CoreV1().Secrets(w.Namespace).Get(ref.Name, metav1.GetOptions{})
 		if err != nil {
-			return nil, false, err
+			return err
 		}
 		pullSecrets = append(pullSecrets, *secret)
 	}
 
 	keyring, err := docker.MakeDockerKeyring(pullSecrets)
 	if err != nil {
-		return nil, false, err
+		return err
 	}
 
 	images := sets.NewString()
@@ -146,17 +116,24 @@ func (c *Controller) CheckWorkload(w *wpi.Workload) (*wpi.Workload, bool, error)
 	for _, image := range images.List() {
 		ref, err := docker.ParseImageName(image)
 		if err != nil {
-			return nil, false, err
+			return err
+		}
+		_, auth, mf, err := docker.PullManifest(ref, keyring)
+		if err != nil {
+			if c.FailurePolicy == types.FailurePolicyIgnore {
+				continue
+			}
+			return err
 		}
 
-		req, err := c.MakePostAncestryRequest(ref, keyring)
+		req, err := c.NewPostAncestryRequest(ref, auth, mf)
 		if err != nil {
-			return nil, false, err
+			return err
 		}
 
 		_, err = c.ClairAncestryServiceClient.PostAncestry(ctx, req)
 		if err != nil {
-			return nil, false, errors.Wrapf(err, "failed to send layers for image %s", ref)
+			return errors.Wrapf(err, "failed to send layers for image %s", ref)
 		}
 
 		resp, err := c.ClairAncestryServiceClient.GetAncestry(ctx, &clairpb.GetAncestryRequest{
@@ -165,23 +142,18 @@ func (c *Controller) CheckWorkload(w *wpi.Workload) (*wpi.Workload, bool, error)
 			WithVulnerabilities: true,
 		})
 		if err != nil {
-			return nil, false, errors.Wrapf(err, "failed to get layers for image %s", ref)
+			return errors.Wrapf(err, "failed to get layers for image %s", ref)
 		}
 
 		if hasVulnerabilities(resp) {
-			return nil, false, fmt.Errorf("image %s contains vulnerabilities", ref)
+			return errors.Errorf("image %s contains vulnerabilities", ref)
 		}
 	}
 
-	return w, true, nil
+	return nil
 }
 
-func (c *Controller) MakePostAncestryRequest(ref docker.ImageRef, keyring credentialprovider.DockerKeyring) (*clairpb.PostAncestryRequest, error) {
-	_, auth, mf, err := docker.PullManifest(ref, keyring)
-	if err != nil {
-		return nil, err
-	}
-
+func (c *Controller) NewPostAncestryRequest(ref docker.ImageRef, auth *dockertypes.AuthConfig, mf interface{}) (*clairpb.PostAncestryRequest, error) {
 	headers := map[string]string{}
 	if auth.Username != "" && auth.Password != "" {
 		headers["Authorization"] = "Basic " + base64.StdEncoding.EncodeToString([]byte(auth.Username+":"+auth.Password))
@@ -215,13 +187,9 @@ func (c *Controller) MakePostAncestryRequest(ref docker.ImageRef, keyring creden
 	default:
 		return nil, errors.New("unknown manifest type")
 	}
-
-	layersLen := len(req.Layers)
-	if layersLen == 0 {
-		return nil, errors.Wrapf(err, "failed to pull Layers for image %s", ref)
+	if len(req.Layers) == 0 {
+		return nil, errors.Errorf("failed to pull Layers for image %s", ref)
 	}
-	glog.Infoln("Analyzing", layersLen, "layers")
-
 	return req, nil
 }
 

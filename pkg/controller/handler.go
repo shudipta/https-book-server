@@ -11,15 +11,13 @@ var _ admission.ResourceHandler = &Controller{}
 func (c *Controller) OnCreate(obj runtime.Object) (runtime.Object, error) {
 	w := obj.(*workload.Workload)
 	w.Object = nil
-	modObj, _, err := c.CheckWorkload(w)
-	return modObj, err
+	return nil, c.checkWorkload(w)
 }
 
 func (c *Controller) OnUpdate(oldObj, newObj runtime.Object) (runtime.Object, error) {
 	w := newObj.(*workload.Workload)
 	w.Object = nil
-	modObj, _, err := c.CheckWorkload(w)
-	return modObj, err
+	return nil, c.checkWorkload(w)
 }
 
 func (c *Controller) OnDelete(obj runtime.Object) error {

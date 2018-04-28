@@ -70,7 +70,12 @@ func (r *REST) Create(ctx apirequest.Context, obj runtime.Object, _ rest.Validat
 	}
 	r.imageRefs[req.Name] = ref.String()
 
-	postReq, err := r.controller.MakePostAncestryRequest(ref, keyring)
+	_, auth, mf, err := docker.PullManifest(ref, keyring)
+	if err != nil {
+		return nil, err
+	}
+
+	postReq, err := r.controller.NewPostAncestryRequest(ref, auth, mf)
 	if err != nil {
 		return nil, err
 	}
