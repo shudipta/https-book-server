@@ -9,7 +9,7 @@ import (
 
 	"github.com/appscode/go/log"
 	"github.com/coreos/clair/api/v3/clairpb"
-	"github.com/soter/scanner/pkg/clair-api"
+	"github.com/soter/scanner/pkg/clair"
 	"github.com/tamalsaha/go-oneliners"
 	"k8s.io/apiserver/pkg/server/mux"
 )
@@ -42,13 +42,13 @@ func (m AuditLogWebhook) Install(c *mux.PathRecorderMux) {
 
 		fmt.Println("notication =", notificationEnvelop.Notification.Name)
 
-		err = clair_api.MarkNotificationAsRead(m.ClairNotificationServiceClient, notificationEnvelop.Notification.Name)
+		err = clair.MarkNotificationAsRead(m.ClairNotificationServiceClient, notificationEnvelop.Notification.Name)
 		if err != nil {
 			fmt.Println("failed to mark notification as read:", err)
 			log.Fatalln("failed to mark notification as read:", err)
 		}
 
-		notificationResp, err := clair_api.GetNotification(m.ClairNotificationServiceClient, notificationEnvelop.Notification.Name)
+		notificationResp, err := clair.GetNotification(m.ClairNotificationServiceClient, notificationEnvelop.Notification.Name)
 		if err != nil {
 			fmt.Println("failed to get notification:", err)
 			log.Fatalln("failed to get notification:", err)

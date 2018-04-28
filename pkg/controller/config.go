@@ -3,7 +3,7 @@ package controller
 import (
 	"fmt"
 
-	"github.com/soter/scanner/pkg/clair-api"
+	"github.com/soter/scanner/pkg/clair"
 	"github.com/soter/scanner/pkg/eventer"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -28,17 +28,17 @@ func NewConfig(clientConfig *rest.Config) *Config {
 }
 
 func (c *Config) New() (*Controller, error) {
-	dialOption, err := clair_api.DialOptionForTLSConfig(c.ClairApiCertDir)
+	dialOption, err := clair.DialOptionForTLSConfig(c.ClairApiCertDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get dial option for tls: %v", err)
 	}
 
-	clairAncestryServiceClient, err := clair_api.NewClairAncestryServiceClient(c.ClairAddress, dialOption)
+	clairAncestryServiceClient, err := clair.NewClairAncestryServiceClient(c.ClairAddress, dialOption)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect for Ancestry Service: %v", err)
 	}
 
-	clairNotificationServiceClient, err := clair_api.NewClairNotificationServiceClient(c.ClairAddress, dialOption)
+	clairNotificationServiceClient, err := clair.NewClairNotificationServiceClient(c.ClairAddress, dialOption)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect for Notification Service: %v", err)
 	}

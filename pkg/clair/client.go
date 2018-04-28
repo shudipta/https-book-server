@@ -1,4 +1,4 @@
-package clair_api
+package clair
 
 import (
 	"context"
