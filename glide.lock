@@ -1,5 +1,5 @@
 hash: 6515bc700e8eb75069190ddf6eac2b8bae33460f1908dc8272dffacedff7236d
-updated: 2018-04-28T13:34:57.711945786-07:00
+updated: 2018-04-29T02:30:19.723364953-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
@@ -29,7 +29,7 @@ imports:
 - name: github.com/appscode/jsonpatch
   version: 58a38a46ddb591a543c6b1003213353e29331c5a
 - name: github.com/appscode/kubernetes-webhook-util
-  version: 2c34ff27cf8b3df6f86cfc10a3934de13fcc9571
+  version: f3ccf4e4dea25ff49a95690e1e7653b79fd0a9ec
   subpackages:
   - admission
   - admission/v1beta1
@@ -138,10 +138,7 @@ imports:
   version: 48702e0da86bd25e76cfef347e2adeb434a0d0a6
   subpackages:
   - daemon
-  - dbus
   - journal
-  - unit
-  - util
 - name: github.com/cpuguy83/go-md2man
   version: 71acacd42f85e5e82f70a55327789582a5200a90
   subpackages:
@@ -180,8 +177,6 @@ imports:
   version: 3ede32e2033de7505e6500d6c868c2b9ed9f169d
   subpackages:
   - nat
-  - sockets
-  - tlsconfig
 - name: github.com/docker/go-units
   version: 9e638d38cf6977a37a8ea0078f3ee75a7cdb2dd1
 - name: github.com/docker/libtrust

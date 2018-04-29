@@ -1,17 +1,8 @@
 package scanner
 
 import (
-	core "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-type ImageReviewRequest struct {
-	// +optional
-	Image string
-
-	// +optional
-	ImagePullSecrets []core.LocalObjectReference
-}
 
 type Vulnerability struct {
 	Name          string
@@ -33,9 +24,14 @@ type Feature struct {
 	Vulnerabilities []Vulnerability
 }
 
-type ImageReviewResponse struct {
+type ScanResult struct {
+	Name string
 	// +optional
 	Features []Feature
+}
+
+type ImageReviewResponse struct {
+	Images []ScanResult `json:"images,omitempty"`
 }
 
 // +genclient
@@ -46,10 +42,6 @@ type ImageReviewResponse struct {
 type ImageReview struct {
 	metav1.TypeMeta
 	metav1.ObjectMeta
-
-	// +optional
-	Request *ImageReviewRequest
-
 	// +optional
 	Response *ImageReviewResponse
 }

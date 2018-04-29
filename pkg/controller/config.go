@@ -1,9 +1,8 @@
 package controller
 
 import (
-	"fmt"
-
 	wcs "github.com/appscode/kubernetes-webhook-util/client/workload/v1"
+	"github.com/coreos/clair/api/v3/clairpb"
 	"github.com/soter/scanner/pkg/clair"
 	"github.com/soter/scanner/pkg/eventer"
 	"github.com/soter/scanner/pkg/types"
@@ -23,6 +22,10 @@ type Config struct {
 	ClientConfig   *rest.Config
 	KubeClient     kubernetes.Interface
 	WorkloadClient wcs.Interface
+	Scanner        *clair.Scanner
+
+	AncestryClient     clairpb.AncestryServiceClient
+	NotificationClient clairpb.NotificationServiceClient
 }
 
 func NewConfig(clientConfig *rest.Config) *Config {
@@ -32,31 +35,13 @@ func NewConfig(clientConfig *rest.Config) *Config {
 }
 
 func (c *Config) New() (*Controller, error) {
-	dialOption, err := clair.DialOptionForTLSConfig(c.ClairApiCertDir)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get dial option for tls: %v", err)
-	}
-
-	clairAncestryServiceClient, err := clair.NewClairAncestryServiceClient(c.ClairAddress, dialOption)
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect for Ancestry Service: %v", err)
-	}
-
-	clairNotificationServiceClient, err := clair.NewClairNotificationServiceClient(c.ClairAddress, dialOption)
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect for Notification Service: %v", err)
-	}
-
 	ctrl := &Controller{
 		config: c.config,
 
 		KubeClient:     c.KubeClient,
 		WorkloadClient: c.WorkloadClient,
 		recorder:       eventer.NewEventRecorder(c.KubeClient, "soter-scanner"),
-
-		ClairAncestryServiceClient:     clairAncestryServiceClient,
-		ClairNotificationServiceClient: clairNotificationServiceClient,
+		scanner:        c.Scanner,
 	}
-
 	return ctrl, nil
 }

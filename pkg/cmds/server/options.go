@@ -4,6 +4,7 @@ import (
 	"flag"
 
 	wcs "github.com/appscode/kubernetes-webhook-util/client/workload/v1"
+	"github.com/soter/scanner/pkg/clair"
 	"github.com/soter/scanner/pkg/controller"
 	"github.com/soter/scanner/pkg/types"
 	"github.com/spf13/pflag"
@@ -59,5 +60,12 @@ func (s *ExtraOptions) ApplyTo(cfg *controller.Config) error {
 	if cfg.WorkloadClient, err = wcs.NewForConfig(cfg.ClientConfig); err != nil {
 		return err
 	}
+	if cfg.Scanner, err = clair.NewScanner(cfg.ClientConfig, s.ClairAddress, s.ClairApiCertDir, s.FailurePolicy); err != nil {
+		return err
+	}
+	if cfg.AncestryClient, cfg.NotificationClient, err = clair.NewClient(s.ClairAddress, s.ClairApiCertDir); err != nil {
+		return err
+	}
+
 	return nil
 }

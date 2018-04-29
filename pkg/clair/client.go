@@ -13,14 +13,18 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func DialOptionForTLSConfig(clairApiCertDir string) (grpc.DialOption, error) {
+const (
+	Timeout = 5 * time.Minute
+)
+
+func DialOptionForTLSConfig(certDir string) (grpc.DialOption, error) {
 	certificate, err := tls.LoadX509KeyPair(
-		clairApiCertDir+"client@soter.ac.crt",
-		clairApiCertDir+"client@soter.ac.key",
+		certDir+"client@soter.ac.crt",
+		certDir+"client@soter.ac.key",
 	)
 
 	certPool := x509.NewCertPool()
-	pemCert, err := ioutil.ReadFile(clairApiCertDir + "ca.crt")
+	pemCert, err := ioutil.ReadFile(certDir + "ca.crt")
 	if err != nil {
 		return nil, fmt.Errorf("failed to read ca cert: %s", err)
 	}
@@ -65,7 +69,7 @@ func MarkNotificationAsRead(clairClient clairpb.NotificationServiceClient, notif
 	req := &clairpb.MarkNotificationAsReadRequest{
 		Name: notificationName,
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
 	defer cancel()
 	_, err := clairClient.MarkNotificationAsRead(ctx, req)
 	if err != nil {
@@ -83,7 +87,7 @@ func GetNotification(
 		Name:  notificationName,
 		Limit: 10,
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
 	defer cancel()
 	return clairClient.GetNotification(ctx, req)
 }

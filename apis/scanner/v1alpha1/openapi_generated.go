@@ -93,11 +93,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 								Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
 							},
 						},
-						"request": {
-							SchemaProps: spec.SchemaProps{
-								Ref: ref("github.com/soter/scanner/apis/scanner/v1alpha1.ImageReviewRequest"),
-							},
-						},
 						"response": {
 							SchemaProps: spec.SchemaProps{
 								Ref: ref("github.com/soter/scanner/apis/scanner/v1alpha1.ImageReviewResponse"),
@@ -107,33 +102,19 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{
-				"github.com/soter/scanner/apis/scanner/v1alpha1.ImageReviewRequest", "github.com/soter/scanner/apis/scanner/v1alpha1.ImageReviewResponse", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+				"github.com/soter/scanner/apis/scanner/v1alpha1.ImageReviewResponse", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 		},
-		"github.com/soter/scanner/apis/scanner/v1alpha1.ImageReviewRequest": {
+		"github.com/soter/scanner/apis/scanner/v1alpha1.ImageReviewResponse": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
 					Properties: map[string]spec.Schema{
-						"image": {
+						"images": {
 							SchemaProps: spec.SchemaProps{
-								Description: "Docker image name. More info: https://kubernetes.io/docs/concepts/containers/images This field is optional to allow higher level config management to default or override container images in workload controllers like Deployments and StatefulSets.",
-								Type:        []string{"string"},
-								Format:      "",
-							},
-						},
-						"imagePullSecrets": {
-							VendorExtensible: spec.VendorExtensible{
-								Extensions: spec.Extensions{
-									"x-kubernetes-patch-merge-key": "name",
-									"x-kubernetes-patch-strategy":  "merge",
-								},
-							},
-							SchemaProps: spec.SchemaProps{
-								Description: "ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec. If specified, these secrets will be passed to individual puller implementations for them to use. For example, in the case of docker, only DockerConfig type secrets are honored. More info: https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod",
-								Type:        []string{"array"},
+								Type: []string{"array"},
 								Items: &spec.SchemaOrArray{
 									Schema: &spec.Schema{
 										SchemaProps: spec.SchemaProps{
-											Ref: ref("k8s.io/api/core/v1.LocalObjectReference"),
+											Ref: ref("github.com/soter/scanner/apis/scanner/v1alpha1.ScanResult"),
 										},
 									},
 								},
@@ -143,12 +124,18 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 				},
 			},
 			Dependencies: []string{
-				"k8s.io/api/core/v1.LocalObjectReference"},
+				"github.com/soter/scanner/apis/scanner/v1alpha1.ScanResult"},
 		},
-		"github.com/soter/scanner/apis/scanner/v1alpha1.ImageReviewResponse": {
+		"github.com/soter/scanner/apis/scanner/v1alpha1.ScanResult": {
 			Schema: spec.Schema{
 				SchemaProps: spec.SchemaProps{
 					Properties: map[string]spec.Schema{
+						"name": {
+							SchemaProps: spec.SchemaProps{
+								Type:   []string{"string"},
+								Format: "",
+							},
+						},
 						"features": {
 							SchemaProps: spec.SchemaProps{
 								Type: []string{"array"},

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	hooks "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
+	wpi "github.com/appscode/kubernetes-webhook-util/apis/workload/v1"
 	admissionreview "github.com/appscode/kubernetes-webhook-util/registry/admissionreview/v1beta1"
 	"github.com/soter/scanner/apis/scanner/install"
 	"github.com/soter/scanner/apis/scanner/v1alpha1"
@@ -106,7 +107,7 @@ func (c completedConfig) New() (*ScannerServer, error) {
 	}
 
 	routes.AuditLogWebhook{
-		ClairNotificationServiceClient: ctrl.ClairNotificationServiceClient,
+		ClairNotificationServiceClient: c.ScannerConfig.NotificationClient,
 	}.Install(genericServer.Handler.NonGoRestfulMux)
 
 	var admissionHooks = []hooks.AdmissionHook{
@@ -211,7 +212,15 @@ func (c completedConfig) New() (*ScannerServer, error) {
 		apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(v1alpha1.SchemeGroupVersion.Group, registry, Scheme, metav1.ParameterCodec, Codecs)
 		apiGroupInfo.GroupMeta.GroupVersion = v1alpha1.SchemeGroupVersion
 		v1alpha1storage := map[string]rest.Storage{}
-		v1alpha1storage[v1alpha1.ResourcePluralImageReview] = irregistry.NewREST(c.ScannerConfig.ClientConfig, s.Scanner)
+		v1alpha1storage[strings.ToLower(wpi.KindPod)+"s"] = irregistry.NewREST(c.ScannerConfig.Scanner, wpi.KindPod)
+		v1alpha1storage[strings.ToLower(wpi.KindDeployment)+"s"] = irregistry.NewREST(c.ScannerConfig.Scanner, wpi.KindDeployment)
+		v1alpha1storage[strings.ToLower(wpi.KindReplicaSet)+"s"] = irregistry.NewREST(c.ScannerConfig.Scanner, wpi.KindReplicaSet)
+		v1alpha1storage[strings.ToLower(wpi.KindReplicationController)+"s"] = irregistry.NewREST(c.ScannerConfig.Scanner, wpi.KindReplicationController)
+		v1alpha1storage[strings.ToLower(wpi.KindStatefulSet)+"s"] = irregistry.NewREST(c.ScannerConfig.Scanner, wpi.KindStatefulSet)
+		v1alpha1storage[strings.ToLower(wpi.KindDaemonSet)+"s"] = irregistry.NewREST(c.ScannerConfig.Scanner, wpi.KindDaemonSet)
+		v1alpha1storage[strings.ToLower(wpi.KindJob)+"s"] = irregistry.NewREST(c.ScannerConfig.Scanner, wpi.KindJob)
+		v1alpha1storage[strings.ToLower(wpi.KindCronJob)+"s"] = irregistry.NewREST(c.ScannerConfig.Scanner, wpi.KindCronJob)
+		v1alpha1storage[strings.ToLower(wpi.KindDeploymentConfig)+"s"] = irregistry.NewREST(c.ScannerConfig.Scanner, wpi.KindDeploymentConfig)
 		apiGroupInfo.VersionedResourcesStorageMap[v1alpha1.SchemeGroupVersion.Version] = v1alpha1storage
 
 		if err := s.GenericAPIServer.InstallAPIGroup(&apiGroupInfo); err != nil {
