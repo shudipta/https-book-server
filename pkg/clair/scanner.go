@@ -33,8 +33,8 @@ type Scanner struct {
 	wc       wcs.Interface
 	recorder record.EventRecorder
 
-	ancestryClient     clairpb.AncestryServiceClient
-	notificationClient clairpb.NotificationServiceClient
+	AncestryClient     clairpb.AncestryServiceClient
+	NotificationClient clairpb.NotificationServiceClient
 	failurePolicy      types.FailurePolicy
 	cache              *lru.Cache
 }
@@ -66,19 +66,26 @@ func NewScanner(config *rest.Config, addr string, certDir string, failurePolicy 
 	if err != nil {
 		return nil, err
 	}
-	dialOption, err := DialOptionForTLSConfig(certDir)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get dial option for tls")
+
+	var opts []grpc.DialOption
+	if certDir == "" {
+		opts = append(opts, grpc.WithInsecure())
+	} else {
+		tlsOption, err := DialOptionForTLSConfig(certDir)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get dial option for tls")
+		}
+		opts = append(opts, tlsOption)
 	}
-	conn, err := grpc.Dial(addr, dialOption)
+	conn, err := grpc.Dial(addr, opts...)
 	if err != nil {
 		return nil, err
 	}
 	ctrl := &Scanner{
 		kc:                 kc,
 		wc:                 wc,
-		ancestryClient:     clairpb.NewAncestryServiceClient(conn),
-		notificationClient: clairpb.NewNotificationServiceClient(conn),
+		AncestryClient:     clairpb.NewAncestryServiceClient(conn),
+		NotificationClient: clairpb.NewNotificationServiceClient(conn),
 		failurePolicy:      failurePolicy,
 		cache:              cache,
 	}
@@ -112,8 +119,8 @@ func (c *Scanner) ScanCluster() error {
 	return utilerrors.NewAggregate(errs)
 }
 
-func (c *Scanner) ScanWorkload(kind, name, namespace string) ([]api.ScanResult, error) {
-	obj, err := wcs.NewObjectForKind(kind, name, namespace)
+func (c *Scanner) ScanWorkload(kindOrResource, name, namespace string) ([]api.ScanResult, error) {
+	obj, err := wcs.NewObject(kindOrResource, name, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -228,12 +235,12 @@ func (c *Scanner) scan(w *wpi.Workload, pullSecrets []core.Secret) ([]api.ScanRe
 			return nil, err
 		}
 
-		_, err = c.ancestryClient.PostAncestry(ctx, req)
+		_, err = c.AncestryClient.PostAncestry(ctx, req)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to send layers for image %s", ref)
 		}
 
-		resp, err := c.ancestryClient.GetAncestry(ctx, &clairpb.GetAncestryRequest{
+		resp, err := c.AncestryClient.GetAncestry(ctx, &clairpb.GetAncestryRequest{
 			AncestryName:        ref.String(),
 			WithFeatures:        true,
 			WithVulnerabilities: true,

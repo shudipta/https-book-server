@@ -40,6 +40,7 @@ BUILD_METADATA = libbuild.metadata(libbuild.REPO_ROOT)
 libbuild.BIN_MATRIX = {
     'scanner': {
         'type': 'go',
+        'release': True,
         'go_version': True,
         'use_cgo': False,
         'distro': {
@@ -47,6 +48,12 @@ libbuild.BIN_MATRIX = {
         }
     }
 }
+if libbuild.ENV not in ['prod']:
+    libbuild.BIN_MATRIX['scanner']['distro'] = {
+        'alpine': ['amd64'],
+        libbuild.GOHOSTOS: [libbuild.GOHOSTARCH]
+    }
+
 libbuild.BUCKET_MATRIX = {
     'prod': 'gs://appscode-cdn',
     'dev': 'gs://appscode-dev'
@@ -155,7 +162,7 @@ def install():
 def default():
     gen()
     fmt()
-    die(call('GO15VENDOREXPERIMENT=1 ' + libbuild.GOC + ' install .'))
+    die(call('GO15VENDOREXPERIMENT=1 ' + libbuild.GOC + ' install . ./test/...'))
 
 
 def test(type, *args):

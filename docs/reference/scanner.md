@@ -40,6 +40,6 @@ Scanner by AppsCode - Docker Image Scanner
 
 ### SEE ALSO
 
-* [scanner run](/docs/reference/scanner_run.md)	 - Launch Scanner Controller
+* [scanner run](/docs/reference/scanner_run.md)	 - Launch Docker image scanner
 * [scanner version](/docs/reference/scanner_version.md)	 - Prints binary version number.
 

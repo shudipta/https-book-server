@@ -14,8 +14,8 @@ func NewCmdRun(out, errOut io.Writer, stopCh <-chan struct{}) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:               "run",
-		Short:             "Launch Scanner Controller",
-		Long:              "Launch Scanner Controller",
+		Short:             "Launch Docker image scanner",
+		Long:              "Launch Docker image scanner",
 		DisableAutoGenTag: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			log.Infof("Starting operator version %s+%s ...", v.Version.Version, v.Version.CommitHash)

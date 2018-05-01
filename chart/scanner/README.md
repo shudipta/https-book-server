@@ -6,7 +6,7 @@
 ```console
 $ helm repo add appscode https://charts.appscode.com/stable/
 $ helm repo update
-$ helm install appscode/scanner
+$ helm install soter/scanner
 ```
 
 ## Introduction
@@ -21,7 +21,7 @@ This chart bootstraps a [Scanner server](https://github.com/soter/scanner) deplo
 To install the chart with the release name `my-release`:
 
 ```console
-$ helm install appscode/scanner --name my-release
+$ helm install soter/scanner --name my-release
 ```
 
 The command deploys Scanner server on the Kubernetes cluster in the default configuration. The [configuration](#configuration) section lists the parameters that can be configured during installation.
@@ -48,7 +48,7 @@ The following table lists the configurable parameters of the Scanner chart and t
 | `replicaCount`                      | Number of Scanner server replicas to create (only 1 is supported) | `1`                |
 | `scanner.registry`                  | Docker registry used to pull Scanner image                        | `soter`            |
 | `scanner.repository`                | Scanner container image                                           | `scanner`          |
-| `scanner.tag`                       | Scanner container image tag                                       | `canary`           |
+| `scanner.tag`                       | Scanner container image tag                                       | `0.1.0`            |
 | `imagePullPolicy`                   | container image pull policy                                       | `IfNotPresent`     |
 | `criticalAddon`                     | If true, installs Scanner server as critical addon                | `false`            |
 | `rbac.create`                       | If `true`, create and use RBAC resources                          | `true`             |
@@ -65,14 +65,14 @@ The following table lists the configurable parameters of the Scanner chart and t
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example:
 
 ```console
-$ helm install --name my-release --set image.tag=v0.2.1 appscode/scanner
+$ helm install --name my-release --set image.tag=v0.2.1 soter/scanner
 ```
 
 Alternatively, a YAML file that specifies the values for the parameters can be provided while
 installing the chart. For example:
 
 ```console
-$ helm install --name my-release --values values.yaml appscode/scanner
+$ helm install --name my-release --values values.yaml soter/scanner
 ```
 
 ## RBAC
@@ -93,5 +93,5 @@ If the output contains "beta", you may install the chart with RBAC enabled (see 
 To enable the creation of RBAC resources (On clusters with RBAC). Do the following:
 
 ```console
-$ helm install --name my-release appscode/scanner --set rbac.create=true
+$ helm install --name my-release soter/scanner --set rbac.create=true
 ```

@@ -1,4 +1,4 @@
-package scanner
+package main
 
 import (
 	v "github.com/appscode/go/version"

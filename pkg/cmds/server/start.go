@@ -66,6 +66,7 @@ func (o ScannerOptions) Config() (*server.ScannerConfig, error) {
 	serverConfig.OpenAPIConfig.Info.Version = v1alpha1.SchemeGroupVersion.Version
 	serverConfig.OpenAPIConfig.IgnorePrefixes = []string{
 		"/swaggerapi",
+		// webhooks
 		"/apis/admission.scanner.soter.ac/v1alpha1/deployments",
 		"/apis/admission.scanner.soter.ac/v1alpha1/daemonsets",
 		"/apis/admission.scanner.soter.ac/v1alpha1/statefulsets",
@@ -73,6 +74,17 @@ func (o ScannerOptions) Config() (*server.ScannerConfig, error) {
 		"/apis/admission.scanner.soter.ac/v1alpha1/replicasets",
 		"/apis/admission.scanner.soter.ac/v1alpha1/jobs",
 		"/apis/admission.scanner.soter.ac/v1alpha1/cronjobs",
+		"/apis/admission.scanner.soter.ac/v1alpha1/deploymentconfigs",
+		// image review endpoints
+		"/apis/scanner.soter.ac/v1alpha1/pods",
+		"/apis/scanner.soter.ac/v1alpha1/deployments",
+		"/apis/scanner.soter.ac/v1alpha1/daemonsets",
+		"/apis/scanner.soter.ac/v1alpha1/statefulsets",
+		"/apis/scanner.soter.ac/v1alpha1/replicationcontrollers",
+		"/apis/scanner.soter.ac/v1alpha1/replicasets",
+		"/apis/scanner.soter.ac/v1alpha1/jobs",
+		"/apis/scanner.soter.ac/v1alpha1/cronjobs",
+		"/apis/scanner.soter.ac/v1alpha1/deploymentconfigs",
 	}
 
 	controllerConfig := controller.NewConfig(serverConfig.ClientConfig)

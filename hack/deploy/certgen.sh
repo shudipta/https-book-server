@@ -31,7 +31,7 @@ else
 fi
 
 rm -rf $ONESSL ca.crt ca.key server.crt server.key client@client.crt client@client.key
-rm -rf clair-cert/
+rm -rf clair-certs pki/scanner
 
 echo "creating necessary certificate-key pairs"
 
@@ -39,20 +39,19 @@ echo "creating necessary certificate-key pairs"
 # - a local CA key and cert
 # - a webhook server key and cert signed by the local CA
 export SCANNER_NAMESPACE=kube-system
-$ONESSL create ca-cert
-$ONESSL create server-cert server --domains=scanner.$SCANNER_NAMESPACE.svc
+$ONESSL create ca-cert --cert-dir=pki/scanner
+$ONESSL create server-cert server --cert-dir=pki/scanner --domains=scanner.${SCANNER_NAMESPACE}.svc
 
-# In the clair notifier part, server=scanner-apiserver, client=clair
+# In the clair notifier part, server=scanner-server, client=clair
 # create necessary TLS certificates:
 # - a client key and cert signed by the above local CA for clair notifier
-$ONESSL create client-cert client --organization=clair
+$ONESSL create client-cert client --cert-dir=pki/scanner
 
-# In the clair api part: server=clair, client=scanner-apiserver
+# In the clair api part: server=clair, client=scanner-server
 # create necessary TLS certificates:
 # - a CA key and cert for clair api
 # - a server key and cert signed by this CA for clair api
 # - a client key and cert signed by this CA for clair api
-$ONESSL create ca-cert --cert-dir=clair-cert/
-$ONESSL create server-cert server --cert-dir=clair-cert/ --domains=clairsvc.default.svc --ips="192.168.99.100,0.0.0.0"
-$ONESSL create client-cert client --cert-dir=clair-cert/ --organization=soter.ac
-
+$ONESSL create ca-cert --cert-dir=pki/clair
+$ONESSL create server-cert server --cert-dir=pki/clair --domains=clairsvc.${SCANNER_NAMESPACE}.svc
+$ONESSL create client-cert client --cert-dir=pki/clair

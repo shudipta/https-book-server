@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "clair.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    app: "{{ template "clair.name" . }}"
+    heritage: "{{ .Release.Service }}"
+    release: "{{ .Release.Name }}"
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "clair.fullname" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "clair.fullname" . }}
+    spec:
+      volumes:
+      - name: "{{ .Chart.Name }}-config"
+        configMap:
+          name: {{ template "clair.fullname" . }}
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        args:
+        - "-log-level={{ .Values.logLevel }}"
+        {{ if .Values.insecureTls }}- "--insecure-tls" {{end}}
+        ports:
+        - name: clair-api
+          containerPort: {{ .Values.service.internalApiPort }}
+          protocol: TCP
+        - name: clair-health
+          containerPort: {{ .Values.service.internalHealthPort }}
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.service.internalHealthPort }}
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: {{ .Values.service.internalHealthPort }}
+        volumeMounts:
+        - name: "{{ .Chart.Name }}-config"
+          mountPath: /etc/clair
+        resources:
+{{ toYaml .Values.resources | indent 10 }}

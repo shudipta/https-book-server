@@ -56,7 +56,7 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: scanner-apiserver-extension-server-authentication-reader
+  name: scanner-server-extension-server-authentication-reader
   namespace: kube-system
   labels:
     app: scanner
@@ -73,7 +73,7 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: scanner-apiserver-auth-delegator
+  name: scanner-server-auth-delegator
   labels:
     app: scanner
 roleRef:

@@ -52,7 +52,7 @@ COPY scanner /usr/bin/scanner
 USER nobody:nobody
 ENTRYPOINT ["scanner"]
 EOL
-    local cmd="docker build -t soter/$IMG:$TAG ."
+    local cmd="docker build -t $DOCKER_REGISTRY/$IMG:$TAG ."
     echo $cmd; $cmd
 
     rm scanner Dockerfile

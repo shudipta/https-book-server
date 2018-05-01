@@ -21,7 +21,7 @@ spec:
       imagePullSecrets: [${SCANNER_IMAGE_PULL_SECRET}]
       containers:
       - name: scanner
-        image: ${SCANNER_DOCKER_REGISTRY}/scanner:${SCANNER_SERVER_TAG}
+        image: ${SCANNER_DOCKER_REGISTRY}/scanner:${SCANNER_IMAGE_TAG}
         imagePullPolicy: ${SCANNER_IMAGE_PULL_POLICY}
         args:
         - run
@@ -36,8 +36,8 @@ spec:
         volumeMounts:
         - mountPath: /var/serving-cert
           name: serving-cert
-        - mountPath: /var/clairapi-client-cert
-          name: clairapi-client-cert
+        - mountPath: /var/run/secrets/clair
+          name: clair-client-cert
           readOnly: true
         readinessProbe:
           httpGet:
@@ -48,11 +48,11 @@ spec:
       - name: serving-cert
         secret:
           defaultMode: 420
-          secretName: scanner-apiserver-cert
-      - name: clairapi-client-cert
+          secretName: scanner-server-cert
+      - name: clair-client-cert
         secret:
           # defaultMode: 420
-          secretName: scanner-clairapi-client-cert
+          secretName: clair-client-cert
       tolerations:
       - key: CriticalAddonsOnly
         operator: Exists
@@ -61,7 +61,7 @@ spec:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: scanner-apiserver-cert
+  name: scanner-server-cert
   namespace: ${SCANNER_NAMESPACE}
   labels:
     app: scanner
@@ -74,7 +74,7 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: scanner-clairapi-client-cert
+  name: clair-client-cert
   namespace: ${SCANNER_NAMESPACE}
   labels:
     app: scanner
@@ -98,6 +98,23 @@ spec:
     targetPort: 8443
   selector:
     app: scanner
+---
+# register as aggregated apiserver
+apiVersion: apiregistration.k8s.io/v1beta1
+kind: APIService
+metadata:
+  name: v1alpha1.scanner.soter.ac
+  labels:
+    app: scanner
+spec:
+  caBundle: ${SERVICE_SERVING_CERT_CA}
+  group: scanner.soter.ac
+  groupPriorityMinimum: 1000
+  versionPriority: 15
+  service:
+    name: scanner
+    namespace: ${SCANNER_NAMESPACE}
+  version: v1alpha1
 ---
 # register as aggregated apiserver
 apiVersion: apiregistration.k8s.io/v1beta1

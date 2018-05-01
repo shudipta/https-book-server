@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
+	"path/filepath"
 	"time"
 
 	"github.com/coreos/clair/api/v3/clairpb"
@@ -19,12 +20,12 @@ const (
 
 func DialOptionForTLSConfig(certDir string) (grpc.DialOption, error) {
 	certificate, err := tls.LoadX509KeyPair(
-		certDir+"client@soter.ac.crt",
-		certDir+"client@soter.ac.key",
+		filepath.Join(certDir, "client.crt"),
+		filepath.Join(certDir, "client.key"),
 	)
 
 	certPool := x509.NewCertPool()
-	pemCert, err := ioutil.ReadFile(certDir + "ca.crt")
+	pemCert, err := ioutil.ReadFile(filepath.Join(certDir, "ca.crt"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to read ca cert: %s", err)
 	}

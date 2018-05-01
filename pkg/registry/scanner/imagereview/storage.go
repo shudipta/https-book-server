@@ -11,35 +11,46 @@ import (
 	"k8s.io/apiserver/pkg/registry/rest"
 )
 
+type ScannerStorage interface {
+	rest.Storage
+	Resource() (plural schema.GroupVersionResource, singular string)
+}
+
 type REST struct {
-	scanner *clair.Scanner
-	kind    string
+	scanner  *clair.Scanner
+	plural   schema.GroupVersionResource
+	singular string
 }
 
 var _ rest.Creater = &REST{}
 var _ rest.Getter = &REST{}
 var _ rest.GroupVersionKindProvider = &REST{}
 
-func NewREST(scanner *clair.Scanner, kind string) *REST {
+func NewREST(scanner *clair.Scanner, plural schema.GroupVersionResource, singular string) *REST {
 	return &REST{
-		scanner: scanner,
-		kind:    kind,
+		scanner:  scanner,
+		plural:   plural,
+		singular: singular,
 	}
+}
+
+func (r *REST) GroupVersionKind(containingGV schema.GroupVersion) schema.GroupVersionKind {
+	return api.SchemeGroupVersion.WithKind("ImageReview")
+}
+
+func (r *REST) Resource() (schema.GroupVersionResource, string) {
+	return r.plural, r.singular
 }
 
 func (r *REST) New() runtime.Object {
 	return &api.ImageReview{}
 }
 
-func (r *REST) GroupVersionKind(containingGV schema.GroupVersion) schema.GroupVersionKind {
-	return api.SchemeGroupVersion.WithKind(r.kind)
-}
-
 func (r *REST) Create(ctx apirequest.Context, obj runtime.Object, _ rest.ValidateObjectFunc, _ bool) (runtime.Object, error) {
 	req := obj.(*api.ImageReview)
 	namespace := apirequest.NamespaceValue(ctx)
 
-	result, err := r.scanner.ScanWorkload(r.kind, req.Name, namespace)
+	result, err := r.scanner.ScanWorkload(r.singular, req.Name, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +61,7 @@ func (r *REST) Create(ctx apirequest.Context, obj runtime.Object, _ rest.Validat
 func (r *REST) Get(ctx apirequest.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
 	namespace := apirequest.NamespaceValue(ctx)
 
-	result, err := r.scanner.ScanWorkload(r.kind, name, namespace)
+	result, err := r.scanner.ScanWorkload(r.singular, name, namespace)
 	if err != nil {
 		return nil, err
 	}

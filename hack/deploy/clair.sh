@@ -54,16 +54,16 @@ fi
 echo "running clair"
 
 # Exporting certificates for clair notifier.
-export CLAIR_NOTIFIER_SERVING_CERT_CA=$(cat ca.crt | $ONESSL base64)
-export CLAIR_NOTIFIER_CLIENT_CERT=$(cat client@clair.crt | $ONESSL base64)
-export CLAIR_NOTIFIER_CLIENT_KEY=$(cat client@clair.key | $ONESSL base64)
+export CLAIR_NOTIFIER_SERVING_CERT_CA=$(cat pki/scanner/ca.crt | $ONESSL base64)
+export CLAIR_NOTIFIER_CLIENT_CERT=$(cat pki/scanner/client@clair.crt | $ONESSL base64)
+export CLAIR_NOTIFIER_CLIENT_KEY=$(cat pki/scanner/client@clair.key | $ONESSL base64)
 
 # Exporting certificates for clair api.
-export CLAIR_API_SERVING_CERT_CA=$(cat clair-cert/ca.crt | $ONESSL base64)
-export CLAIR_API_SERVER_CERT=$(cat clair-cert/server.crt | $ONESSL base64)
-export CLAIR_API_SERVER_KEY=$(cat clair-cert/server.key | $ONESSL base64)
+export CLAIR_API_SERVING_CERT_CA=$(cat pki/clair/ca.crt | $ONESSL base64)
+export CLAIR_API_SERVER_CERT=$(cat pki/clair/server.crt | $ONESSL base64)
+export CLAIR_API_SERVER_KEY=$(cat pki/clair/server.key | $ONESSL base64)
 
 # Running clair
 kubectl create secret generic clairsecret --from-file=docs/examples/clair/config.yaml
 kubectl label secret clairsecret app=clair
-${SCRIPT_LOCATION}docs/examples/clair/clair-kubernetes.yaml | $ONESSL envsubst | kubectl apply -f -
+${SCRIPT_LOCATION}hack/deploy/clair/clair.yaml | $ONESSL envsubst | kubectl apply -f -

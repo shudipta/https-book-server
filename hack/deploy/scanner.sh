@@ -1,7 +1,7 @@
 #!/bin/bash
-set -eou pipefail
+set -xeou pipefail
 
-apiServices=(v1alpha1.admission)
+apiServices=(v1alpha1.scanner v1alpha1.admission.scanner)
 
 echo "checking kubeconfig context"
 kubectl config current-context || { echo "Set a context (kubectl use-context <context>) out of the following:"; echo; kubectl config get-contexts; exit 1; }
@@ -9,7 +9,7 @@ echo ""
 
 # http://redsymbol.net/articles/bash-exit-traps/
 function cleanup {
-    rm -rf $ONESSL ca.crt ca.key server.crt server.key
+    rm -rf $ONESSL pki
 }
 trap cleanup EXIT
 
@@ -60,19 +60,19 @@ else
     # ref: https://stackoverflow.com/a/27776822/244009
     case "$(uname -s)" in
         Darwin)
-            curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.1.0/onessl-darwin-amd64
+            curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.3.0/onessl-darwin-amd64
             chmod +x onessl
             export ONESSL=./onessl
             ;;
 
         Linux)
-            curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.1.0/onessl-linux-amd64
+            curl -fsSL -o onessl https://github.com/kubepack/onessl/releases/download/0.3.0/onessl-linux-amd64
             chmod +x onessl
             export ONESSL=./onessl
             ;;
 
         CYGWIN*|MINGW32*|MSYS*)
-            curl -fsSL -o onessl.exe https://github.com/kubepack/onessl/releases/download/0.1.0/onessl-windows-amd64.exe
+            curl -fsSL -o onessl.exe https://github.com/kubepack/onessl/releases/download/0.3.0/onessl-windows-amd64.exe
             chmod +x onessl.exe
             export ONESSL=./onessl.exe
             ;;
@@ -90,9 +90,9 @@ export SCANNER_NAMESPACE=kube-system
 export SCANNER_SERVICE_ACCOUNT=scanner
 export SCANNER_ENABLE_RBAC=true
 export SCANNER_RUN_ON_MASTER=0
-export SCANNER_ENABLE_VALIDATING_WEBHOOK=false
+export SCANNER_ENABLE_VALIDATING_WEBHOOK=true
 export SCANNER_DOCKER_REGISTRY=soter
-export SCANNER_SERVER_TAG=canary
+export SCANNER_IMAGE_TAG=0.1.0
 export SCANNER_IMAGE_PULL_SECRET=
 export SCANNER_IMAGE_PULL_POLICY=IfNotPresent
 export SCANNER_ENABLE_ANALYTICS=true
@@ -103,15 +103,12 @@ export SCRIPT_LOCATION="curl -fsSL https://raw.githubusercontent.com/soter/scann
 if [ "$APPSCODE_ENV" = "dev" ]; then
     detect_tag
     export SCRIPT_LOCATION="cat "
-    export SCANNER_SERVER_TAG=$TAG
+    export SCANNER_IMAGE_TAG=$TAG
     export SCANNER_IMAGE_PULL_POLICY=Always
 fi
 
 KUBE_APISERVER_VERSION=$(kubectl version -o=json | $ONESSL jsonpath '{.serverVersion.gitVersion}')
-$ONESSL semver --check='>=1.9.0' $KUBE_APISERVER_VERSION
-if [ $? -eq 0 ]; then
-    export SCANNER_ENABLE_VALIDATING_WEBHOOK=true
-fi
+$ONESSL semver --check='>=1.9.0' $KUBE_APISERVER_VERSION || { echo "Scanner requires Kubernetes 1.9.0 or later version"; echo; exit 1; }
 
 show_help() {
     echo "scanner.sh - install scanner"
@@ -197,6 +194,8 @@ while test $# -gt 0; do
 done
 
 if [ "$SCANNER_UNINSTALL" -eq 1 ]; then
+    kubectl delete configmap -l app=clair -n $SCANNER_NAMESPACE
+    (${SCRIPT_LOCATION}hack/deploy/clair/clair.yaml | $ONESSL envsubst | kubectl delete -f -) || true
     # delete webhooks and apiservices
     kubectl delete validatingwebhookconfiguration -l app=scanner
     kubectl delete mutatingwebhookconfiguration -l app=scanner
@@ -234,15 +233,56 @@ echo ""
 env | sort | grep SCANNER*
 echo ""
 
-export SERVICE_SERVING_CERT_CA=$(cat ca.crt | $ONESSL base64)
-export TLS_SERVING_CERT=$(cat server.crt | $ONESSL base64)
-export TLS_SERVING_KEY=$(cat server.key | $ONESSL base64)
+echo "creating necessary certificate-key pairs"
+
+# create necessary TLS certificates:
+# - a local CA key and cert
+# - a webhook server key and cert signed by the local CA
+export SCANNER_NAMESPACE=kube-system
+$ONESSL create ca-cert --cert-dir=pki/scanner
+$ONESSL create server-cert server --cert-dir=pki/scanner --domains=scanner.${SCANNER_NAMESPACE}.svc
+
+# In the clair notifier part, server=scanner-server, client=clair
+# create necessary TLS certificates:
+# - a client key and cert signed by the above local CA for clair notifier
+$ONESSL create client-cert client --cert-dir=pki/scanner
+
+# In the clair api part: server=clair, client=scanner-server
+# create necessary TLS certificates:
+# - a CA key and cert for clair api
+# - a server key and cert signed by this CA for clair api
+# - a client key and cert signed by this CA for clair api
+$ONESSL create ca-cert --cert-dir=pki/clair
+$ONESSL create server-cert server --cert-dir=pki/clair --domains=clairsvc.${SCANNER_NAMESPACE}.svc
+$ONESSL create client-cert client --cert-dir=pki/clair
+
+export SERVICE_SERVING_CERT_CA=$(cat pki/scanner/ca.crt | $ONESSL base64)
+export TLS_SERVING_CERT=$(cat pki/scanner/server.crt | $ONESSL base64)
+export TLS_SERVING_KEY=$(cat pki/scanner/server.key | $ONESSL base64)
+export CLAIR_NOTIFIER_CLIENT_CERT=$(cat pki/scanner/client.crt | $ONESSL base64)
+export CLAIR_NOTIFIER_CLIENT_KEY=$(cat pki/scanner/client.key | $ONESSL base64)
+
+export CLAIR_API_SERVING_CERT_CA=$(cat pki/clair/ca.crt | $ONESSL base64)
+export CLAIR_API_SERVER_CERT=$(cat pki/clair/server.crt | $ONESSL base64)
+export CLAIR_API_SERVER_KEY=$(cat pki/clair/server.key | $ONESSL base64)
+export CLAIR_API_CLIENT_CERT=$(cat pki/clair/client.crt | $ONESSL base64)
+export CLAIR_API_CLIENT_KEY=$(cat pki/clair/client.key | $ONESSL base64)
+
 export KUBE_CA=$($ONESSL get kube-ca | $ONESSL base64)
 
-export CLAIR_API_SERVING_CERT_CA=$(cat clair-cert/ca.crt | $ONESSL base64)
-export CLAIR_API_CLIENT_CERT=$(cat clair-cert/client@soter.ac.crt | $ONESSL base64)
-export CLAIR_API_CLIENT_KEY=$(cat clair-cert/client@soter.ac.key | $ONESSL base64)
+# Running clair
+CONFIG_FOUND=1
+kubectl get configmap clair-config -n $SCANNER_NAMESPACE > /dev/null 2>&1 || CONFIG_FOUND=0
+if [ $CONFIG_FOUND -eq 0 ]; then
+    config=`${SCRIPT_LOCATION}hack/deploy/clair/config.yaml | $ONESSL envsubst`
+    kubectl create configmap clair-config -n $SCANNER_NAMESPACE \
+        --from-literal=config.yaml="${config}"
+fi
+kubectl label configmap clair-config app=clair -n $SCANNER_NAMESPACE --overwrite
 
+${SCRIPT_LOCATION}hack/deploy/clair/clair.yaml | $ONESSL envsubst | kubectl apply -f -
+
+# Running Scanner
 ${SCRIPT_LOCATION}hack/deploy/deployment.yaml | $ONESSL envsubst | kubectl apply -f -
 
 if [ "$SCANNER_ENABLE_RBAC" = true ]; then
@@ -266,8 +306,8 @@ $ONESSL wait-until-ready deployment scanner --namespace $SCANNER_NAMESPACE || { 
 
 echo "waiting until scanner apiservice is available"
 for api in "${apiServices[@]}"; do
-    $ONESSL wait-until-ready apiservice ${api}.scanner.soter.ac || { echo "Scanner apiservice $api failed to be ready"; exit 1; }
+    $ONESSL wait-until-ready apiservice ${api}.soter.ac || { echo "Scanner apiservice $api failed to be ready"; exit 1; }
 done
 
 echo
-echo "Successfully installed Scanner!"
+echo "Successfully installed Scanner in $SCANNER_NAMESPACE namespace!"

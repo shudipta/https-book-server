@@ -2,7 +2,6 @@ package controller
 
 import (
 	wcs "github.com/appscode/kubernetes-webhook-util/client/workload/v1"
-	"github.com/coreos/clair/api/v3/clairpb"
 	"github.com/soter/scanner/pkg/clair"
 	"github.com/soter/scanner/pkg/eventer"
 	"github.com/soter/scanner/pkg/types"
@@ -11,9 +10,9 @@ import (
 )
 
 type config struct {
-	ClairAddress    string
-	ClairApiCertDir string
-	FailurePolicy   types.FailurePolicy
+	//ClairAddress  string
+	//ClairCertDir  string
+	FailurePolicy types.FailurePolicy
 }
 
 type Config struct {
@@ -23,9 +22,6 @@ type Config struct {
 	KubeClient     kubernetes.Interface
 	WorkloadClient wcs.Interface
 	Scanner        *clair.Scanner
-
-	AncestryClient     clairpb.AncestryServiceClient
-	NotificationClient clairpb.NotificationServiceClient
 }
 
 func NewConfig(clientConfig *rest.Config) *Config {

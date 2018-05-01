@@ -4,6 +4,7 @@ import (
 	"flag"
 
 	wcs "github.com/appscode/kubernetes-webhook-util/client/workload/v1"
+	"github.com/appscode/kutil/meta"
 	"github.com/soter/scanner/pkg/clair"
 	"github.com/soter/scanner/pkg/controller"
 	"github.com/soter/scanner/pkg/types"
@@ -12,26 +13,26 @@ import (
 )
 
 type ExtraOptions struct {
-	ClairAddress    string
-	ClairApiCertDir string
-	QPS             float64
-	Burst           int
-	FailurePolicy   types.FailurePolicy
+	ClairAddress  string
+	ClairCertDir  string
+	QPS           float64
+	Burst         int
+	FailurePolicy types.FailurePolicy
 }
 
 func NewExtraOptions() *ExtraOptions {
 	return &ExtraOptions{
-		ClairAddress:    "http://clairsvc.default.svc:6060",
-		ClairApiCertDir: "/var/clairapi-client-cert/",
-		QPS:             100,
-		Burst:           100,
-		FailurePolicy:   types.FailurePolicyIgnore,
+		ClairAddress:  "https://clairsvc.default.svc:6060",
+		ClairCertDir:  "/var/run/secrets/clair",
+		QPS:           100,
+		Burst:         100,
+		FailurePolicy: types.FailurePolicyIgnore,
 	}
 }
 
 func (s *ExtraOptions) AddGoFlags(fs *flag.FlagSet) {
 	fs.StringVar(&s.ClairAddress, "clair-addr", s.ClairAddress, "The address where clair is running")
-	fs.StringVar(&s.ClairApiCertDir, "api-cert-dir", s.ClairApiCertDir, "The directory where necessary certificates for clair api are stored")
+	fs.StringVar(&s.ClairCertDir, "clair-cert-dir", s.ClairCertDir, "The directory where necessary certificates for clair api are stored")
 
 	fs.Float64Var(&s.QPS, "qps", s.QPS, "The maximum QPS to the master from this client")
 	fs.IntVar(&s.Burst, "burst", s.Burst, "The maximum burst for throttle")
@@ -39,7 +40,7 @@ func (s *ExtraOptions) AddGoFlags(fs *flag.FlagSet) {
 }
 
 func (s *ExtraOptions) AddFlags(fs *pflag.FlagSet) {
-	pfs := flag.NewFlagSet("clair", flag.ExitOnError)
+	pfs := flag.NewFlagSet("scanner", flag.ExitOnError)
 	s.AddGoFlags(pfs)
 	fs.AddGoFlagSet(pfs)
 }
@@ -47,8 +48,12 @@ func (s *ExtraOptions) AddFlags(fs *pflag.FlagSet) {
 func (s *ExtraOptions) ApplyTo(cfg *controller.Config) error {
 	var err error
 
-	cfg.ClairAddress = s.ClairAddress
-	cfg.ClairApiCertDir = s.ClairApiCertDir
+	if !meta.PossiblyInCluster() {
+		s.ClairAddress = "http://127.0.0.1:6060"
+		s.ClairCertDir = ""
+	}
+	//cfg.ClairAddress = s.ClairAddress
+	//cfg.ClairCertDir = s.ClairCertDir
 	cfg.FailurePolicy = s.FailurePolicy
 
 	cfg.ClientConfig.QPS = float32(s.QPS)
@@ -60,10 +65,7 @@ func (s *ExtraOptions) ApplyTo(cfg *controller.Config) error {
 	if cfg.WorkloadClient, err = wcs.NewForConfig(cfg.ClientConfig); err != nil {
 		return err
 	}
-	if cfg.Scanner, err = clair.NewScanner(cfg.ClientConfig, s.ClairAddress, s.ClairApiCertDir, s.FailurePolicy); err != nil {
-		return err
-	}
-	if cfg.AncestryClient, cfg.NotificationClient, err = clair.NewClient(s.ClairAddress, s.ClairApiCertDir); err != nil {
+	if cfg.Scanner, err = clair.NewScanner(cfg.ClientConfig, s.ClairAddress, s.ClairCertDir, s.FailurePolicy); err != nil {
 		return err
 	}
 
