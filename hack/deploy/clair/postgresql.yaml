@@ -22,7 +22,7 @@ spec:
   resources:
     requests:
       storage: 10Gi
-  storageClassName: standard
+  storageClassName: ${SCANNER_POSTGRES_STORAGE_CLASS}
 ---
 apiVersion: apps/v1
 kind: Deployment

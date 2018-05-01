@@ -90,6 +90,7 @@ export SCANNER_NAMESPACE=kube-system
 export SCANNER_SERVICE_ACCOUNT=scanner
 export SCANNER_ENABLE_RBAC=true
 export SCANNER_RUN_ON_MASTER=0
+export SCANNER_POSTGRES_STORAGE_CLASS=standard
 export SCANNER_ENABLE_VALIDATING_WEBHOOK=true
 export SCANNER_DOCKER_REGISTRY=soter
 export SCANNER_IMAGE_TAG=0.1.0
@@ -119,6 +120,7 @@ show_help() {
     echo "-h, --help                         show brief help"
     echo "-n, --namespace=NAMESPACE          specify namespace (default: kube-system)"
     echo "    --rbac                         create RBAC roles and bindings (default: true)"
+    echo "    --postgres-storage-class       name of storage class used to store Clair PostgreSQL data (default: standard)"
     echo "    --docker-registry              docker registry used to pull scanner images (default: appscode)"
     echo "    --image-pull-secret            name of secret used to pull scanner operator images"
     echo "    --run-on-master                run scanner operator on master"
@@ -145,6 +147,10 @@ while test $# -gt 0; do
             ;;
         --namespace*)
             export SCANNER_NAMESPACE=`echo $1 | sed -e 's/^[^=]*=//g'`
+            shift
+            ;;
+        --postgres-storage-class*)
+            export SCANNER_POSTGRES_STORAGE_CLASS=`echo $1 | sed -e 's/^[^=]*=//g'`
             shift
             ;;
         --docker-registry*)
