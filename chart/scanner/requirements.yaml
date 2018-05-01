@@ -1,0 +1,5 @@
+dependencies:
+  - name: clair
+    version: "*"
+    condition: clair.enabled
+    repository: file://../clair

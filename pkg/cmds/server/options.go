@@ -4,7 +4,6 @@ import (
 	"flag"
 
 	wcs "github.com/appscode/kubernetes-webhook-util/client/workload/v1"
-	"github.com/appscode/kutil/meta"
 	"github.com/soter/scanner/pkg/clair"
 	"github.com/soter/scanner/pkg/controller"
 	"github.com/soter/scanner/pkg/types"
@@ -22,7 +21,7 @@ type ExtraOptions struct {
 
 func NewExtraOptions() *ExtraOptions {
 	return &ExtraOptions{
-		ClairAddress:  "https://clairsvc.default.svc:6060",
+		ClairAddress:  "https://clairsvc.kube-system.svc:6060",
 		ClairCertDir:  "/var/run/secrets/clair",
 		QPS:           100,
 		Burst:         100,
@@ -48,12 +47,6 @@ func (s *ExtraOptions) AddFlags(fs *pflag.FlagSet) {
 func (s *ExtraOptions) ApplyTo(cfg *controller.Config) error {
 	var err error
 
-	if !meta.PossiblyInCluster() {
-		s.ClairAddress = "http://127.0.0.1:6060"
-		s.ClairCertDir = ""
-	}
-	//cfg.ClairAddress = s.ClairAddress
-	//cfg.ClairCertDir = s.ClairCertDir
 	cfg.FailurePolicy = s.FailurePolicy
 
 	cfg.ClientConfig.QPS = float32(s.QPS)

@@ -27,7 +27,7 @@ type AuditLogWebhook struct {
 
 // Install adds the AuditLogWebhook handler
 func (m AuditLogWebhook) Install(c *mux.PathRecorderMux) {
-	c.Handle("/audit-log", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	c.Handle("/clair", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		resp, err := ioutil.ReadAll(r.Body)
 
 		type notification struct {

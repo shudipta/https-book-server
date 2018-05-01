@@ -1,19 +1,19 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: clair-notifier-cert
+  name: scanner-notifier-cert
   namespace: ${SCANNER_NAMESPACE}
   labels:
     app: clair
 data:
   ca.crt: ${SERVICE_SERVING_CERT_CA}
-  client.crt: ${CLAIR_NOTIFIER_CLIENT_CERT}
-  client.key: ${CLAIR_NOTIFIER_CLIENT_KEY}
+  client.crt: ${NOTIFIER_CLIENT_CERT}
+  client.key: ${NOTIFIER_CLIENT_KEY}
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: clair-serving-cert
+  name: clair-server-cert
   namespace: ${SCANNER_NAMESPACE}
   labels:
     app: clair
@@ -63,69 +63,40 @@ spec:
       containers:
       - name: clair
         image: quay.io/coreos/clair-git:latest
+        imagePullPolicy: Always
         args:
-          - "-config"
-          - "/config/config.yaml"
+        - "-config"
+        - "/etc/clair/config.yaml"
+        - -log-level=info
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 6061
         ports:
         - containerPort: 6060
+          name: clair-api
         - containerPort: 6061
+          name: clair-health
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 6061
         volumeMounts:
-        - mountPath: /config
+        - mountPath: /etc/clair
           name: clair-config
         - mountPath: /var/run/secrets/clair
-          name: clair-serving-cert
+          name: clair-server-cert
           readOnly: true
         - mountPath: /var/run/secrets/scanner
-          name: clair-notifier-cert
+          name: scanner-notifier-cert
           readOnly: true
       volumes:
       - name: clair-config
         configMap:
           name: clair-config
-      - name: clair-notifier-cert
+      - name: clair-server-cert
         secret:
-          # defaultMode: 420
-          secretName: clair-notifier-cert
-      - name: clair-serving-cert
+          secretName: clair-server-cert
+      - name: scanner-notifier-cert
         secret:
-          # defaultMode: 420
-          secretName: clair-serving-cert
----
-apiVersion: v1
-kind: ReplicationController
-metadata:
-  name: clair-postgres
-  namespace: ${SCANNER_NAMESPACE}
-  labels:
-    app: postgres
-spec:
-  replicas: 1
-  selector:
-    app: postgres
-  template:
-    metadata:
-      labels:
-        app: postgres
-    spec:
-      containers:
-      - image: postgres:latest
-        name: postgres
-        env:
-        - name: POSTGRES_PASSWORD
-          value: password
-        ports:
-        - containerPort: 5432
-          name: postgres-port
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: postgres
-  namespace: ${SCANNER_NAMESPACE}
-  labels:
-    app: postgres
-spec:
-  ports:
-    - port: 5432
-  selector:
-    app: postgres
+          secretName: scanner-notifier-cert

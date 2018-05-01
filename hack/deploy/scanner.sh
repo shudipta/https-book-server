@@ -1,5 +1,5 @@
 #!/bin/bash
-set -xeou pipefail
+set -eou pipefail
 
 apiServices=(v1alpha1.scanner v1alpha1.admission.scanner)
 
@@ -194,8 +194,7 @@ while test $# -gt 0; do
 done
 
 if [ "$SCANNER_UNINSTALL" -eq 1 ]; then
-    kubectl delete configmap -l app=clair -n $SCANNER_NAMESPACE
-    (${SCRIPT_LOCATION}hack/deploy/clair/clair.yaml | $ONESSL envsubst | kubectl delete -f -) || true
+    echo "Uninstalling Scanner ..."
     # delete webhooks and apiservices
     kubectl delete validatingwebhookconfiguration -l app=scanner
     kubectl delete mutatingwebhookconfiguration -l app=scanner
@@ -221,6 +220,13 @@ if [ "$SCANNER_UNINSTALL" -eq 1 ]; then
        sleep 2
     done
 
+    echo "Uninstalling Clair ..."
+    kubectl delete configmap -l app=clair -n $SCANNER_NAMESPACE
+    (${SCRIPT_LOCATION}hack/deploy/clair/clair.yaml | $ONESSL envsubst | kubectl delete -f -) || true
+
+    echo "Uninstalling Clair PostgreSQL ..."
+    (${SCRIPT_LOCATION}hack/deploy/clair/postgresql.yaml | $ONESSL envsubst | kubectl delete -f -) || true
+
     echo
     echo "Successfully uninstalled Scanner!"
     exit 0
@@ -238,7 +244,6 @@ echo "creating necessary certificate-key pairs"
 # create necessary TLS certificates:
 # - a local CA key and cert
 # - a webhook server key and cert signed by the local CA
-export SCANNER_NAMESPACE=kube-system
 $ONESSL create ca-cert --cert-dir=pki/scanner
 $ONESSL create server-cert server --cert-dir=pki/scanner --domains=scanner.${SCANNER_NAMESPACE}.svc
 
@@ -259,8 +264,8 @@ $ONESSL create client-cert client --cert-dir=pki/clair
 export SERVICE_SERVING_CERT_CA=$(cat pki/scanner/ca.crt | $ONESSL base64)
 export TLS_SERVING_CERT=$(cat pki/scanner/server.crt | $ONESSL base64)
 export TLS_SERVING_KEY=$(cat pki/scanner/server.key | $ONESSL base64)
-export CLAIR_NOTIFIER_CLIENT_CERT=$(cat pki/scanner/client.crt | $ONESSL base64)
-export CLAIR_NOTIFIER_CLIENT_KEY=$(cat pki/scanner/client.key | $ONESSL base64)
+export NOTIFIER_CLIENT_CERT=$(cat pki/scanner/client.crt | $ONESSL base64)
+export NOTIFIER_CLIENT_KEY=$(cat pki/scanner/client.key | $ONESSL base64)
 
 export CLAIR_API_SERVING_CERT_CA=$(cat pki/clair/ca.crt | $ONESSL base64)
 export CLAIR_API_SERVER_CERT=$(cat pki/clair/server.crt | $ONESSL base64)
@@ -270,7 +275,16 @@ export CLAIR_API_CLIENT_KEY=$(cat pki/clair/client.key | $ONESSL base64)
 
 export KUBE_CA=$($ONESSL get kube-ca | $ONESSL base64)
 
+# Running Clair PostgreSQL
+echo
+echo "Installing Clair PostgreSQL ..."
+${SCRIPT_LOCATION}hack/deploy/clair/postgresql.yaml | $ONESSL envsubst | kubectl apply -f -
+echo "waiting until Clair PostgreSQL deployment is ready"
+$ONESSL wait-until-ready deployment clair-postgresql --namespace $SCANNER_NAMESPACE || { echo "Clair PostgreSQL deployment failed to be ready"; exit 1; }
+
 # Running clair
+echo
+echo "Installing Clair ..."
 CONFIG_FOUND=1
 kubectl get configmap clair-config -n $SCANNER_NAMESPACE > /dev/null 2>&1 || CONFIG_FOUND=0
 if [ $CONFIG_FOUND -eq 0 ]; then
@@ -279,8 +293,10 @@ if [ $CONFIG_FOUND -eq 0 ]; then
         --from-literal=config.yaml="${config}"
 fi
 kubectl label configmap clair-config app=clair -n $SCANNER_NAMESPACE --overwrite
-
 ${SCRIPT_LOCATION}hack/deploy/clair/clair.yaml | $ONESSL envsubst | kubectl apply -f -
+
+echo "waiting until Clair deployment is ready"
+$ONESSL wait-until-ready deployment clair --namespace $SCANNER_NAMESPACE || { echo "Clair deployment failed to be ready"; exit 1; }
 
 # Running Scanner
 ${SCRIPT_LOCATION}hack/deploy/deployment.yaml | $ONESSL envsubst | kubectl apply -f -
@@ -301,12 +317,12 @@ if [ "$SCANNER_ENABLE_VALIDATING_WEBHOOK" = true ]; then
 fi
 
 echo
-echo "waiting until scanner deployment is ready"
+echo "waiting until Scanner deployment is ready"
 $ONESSL wait-until-ready deployment scanner --namespace $SCANNER_NAMESPACE || { echo "Scanner deployment failed to be ready"; exit 1; }
 
-echo "waiting until scanner apiservice is available"
+echo "waiting until Scanner apiservice is available"
 for api in "${apiServices[@]}"; do
-    $ONESSL wait-until-ready apiservice ${api}.soter.ac || { echo "Scanner apiservice $api failed to be ready"; exit 1; }
+    $ONESSL wait-until-ready apiservice "${api}.soter.ac" || { echo "Scanner apiservice ${api}.soter.ac failed to be ready"; exit 1; }
 done
 
 echo

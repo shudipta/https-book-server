@@ -30,6 +30,8 @@ spec:
         - --audit-log-path=-
         - --tls-cert-file=/var/serving-cert/tls.crt
         - --tls-private-key-file=/var/serving-cert/tls.key
+        - --clair-addr=https://clairsvc.${SCANNER_NAMESPACE}.svc:6060
+        - --clair-cert-dir=/var/run/secrets/clair
         - --enable-analytics=${SCANNER_ENABLE_ANALYTICS}
         ports:
         - containerPort: 8443
@@ -51,7 +53,6 @@ spec:
           secretName: scanner-server-cert
       - name: clair-client-cert
         secret:
-          # defaultMode: 420
           secretName: clair-client-cert
       tolerations:
       - key: CriticalAddonsOnly

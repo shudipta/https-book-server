@@ -36,3 +36,10 @@ We truncate at 63 chars because some Kubernetes name fields are limited to this 
 {{- define "postgresql.fullname" -}}
 {{- printf "%s-%s" .Release.Name "postgresql" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
+
+Create a default fully qualified scanner name.
+We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
+*/}}
+{{- define "scanner.release" -}}
+{{- printf "%s-%s" .Release.Name "scanner" | trunc 63 | trimSuffix "-" -}}
+{{- end -}}

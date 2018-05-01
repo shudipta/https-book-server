@@ -36,12 +36,12 @@ spec:
         args:
         - run
         - --v={{ .Values.logLevel }}
-        - --rbac={{ .Values.rbac.create }}
-        - --docker-registry={{ .Values.scanner.registry }}
         - --secure-port=8443
         - --audit-log-path=-
         - --tls-cert-file=/var/serving-cert/tls.crt
         - --tls-private-key-file=/var/serving-cert/tls.key
+        - --clair-addr=https://{{ template "clair.name" . }}.{{ .Release.Namespace }}.svc:6060
+        - --clair-cert-dir=/var/run/secrets/clair
         - --enable-analytics={{ .Values.enableAnalytics }}
         ports:
         - containerPort: 8443
@@ -53,15 +53,24 @@ spec:
         volumeMounts:
         - mountPath: /var/serving-cert
           name: serving-cert
+{{- if .Values.clair.enabled }}
+        - mountPath: /var/run/secrets/clair
+          name: clair-client-cert
+{{- end }}
       volumes:
       - name: serving-cert
         secret:
-          defaultMode: 420
-          secretName: {{ template "scanner.fullname" . }}-apiserver-cert
+          secretName: {{ template "scanner.fullname" . }}-server-cert
+{{- if .Values.clair.enabled }}
+      - name: clair-client-cert
+        secret:
+          secretName: {{ template "clair.fullname" . }}-client-cert
+{{- end }}
 {{- if and .Values.criticalAddon (eq .Release.Namespace "kube-system") }}
       tolerations:
       - key: CriticalAddonsOnly
         operator: Exists
+{{- end -}}
 {{- if .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml .Values.nodeSelector | indent 8 }}

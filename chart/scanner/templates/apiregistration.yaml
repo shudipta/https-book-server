@@ -1,8 +1,9 @@
-{{- $ca := genCA "svc-cat-ca" 3650 }}
+{{- $ca := genCA "scanner-ca" 3650 }}
 {{- $cn := include "scanner.fullname" . -}}
 {{- $altName1 := printf "%s.%s" $cn .Release.Namespace }}
 {{- $altName2 := printf "%s.%s.svc" $cn .Release.Namespace }}
-{{- $cert := genSignedCert $cn nil (list $altName1 $altName2) 3650 $ca }}
+{{- $serverCert := genSignedCert $cn nil (list $altName1 $altName2) 3650 $ca }}
+{{- $clientCert := genSignedCert $cn nil (list "localhost") 3650 $ca }}
 apiVersion: apiregistration.k8s.io/v1beta1
 kind: APIService
 metadata:
@@ -44,7 +45,7 @@ spec:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ template "scanner.fullname" . }}-apiserver-cert
+  name: {{ template "scanner.fullname" . }}-server-cert
   namespace: {{ .Release.Namespace }}
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -53,15 +54,31 @@ metadata:
     release: "{{ .Release.Name }}"
 type: Opaque
 data:
-  tls.crt: {{ b64enc $cert.Cert }}
-  tls.key: {{ b64enc $cert.Key }}
+  tls.crt: {{ b64enc $serverCert.Cert }}
+  tls.key: {{ b64enc $serverCert.Key }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ template "scanner.fullname" . }}-notifier-cert
+  namespace: {{ .Release.Namespace }}
+  labels:
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    app: "{{ template "scanner.name" . }}"
+    heritage: "{{ .Release.Service }}"
+    release: "{{ .Release.Name }}"
+type: Opaque
+data:
+  ca.crt: {{ b64enc $ca.Cert }}
+  client.crt: {{ b64enc $clientCert.Cert }}
+  client.key: {{ b64enc $clientCert.Key }}
 ---
 {{ if .Values.rbac.create }}
 # to read the config for terminating authentication
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{ template "scanner.fullname" . }}-apiserver-extension-server-authentication-reader
+  name: {{ template "scanner.fullname" . }}-server-extension-server-authentication-reader
   namespace: kube-system
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -81,7 +98,7 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ template "scanner.fullname" . }}-apiserver-auth-delegator
+  name: {{ template "scanner.fullname" . }}-server-auth-delegator
   labels:
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     app: "{{ template "scanner.name" . }}"

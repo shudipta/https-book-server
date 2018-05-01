@@ -29,3 +29,10 @@ Create the name of the service account to use
     {{ default "default" .Values.serviceAccount.name }}
 {{- end -}}
 {{- end -}}
+
+Create a default fully qualified clair name.
+We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
+*/}}
+{{- define "clair.fullname" -}}
+{{- printf "%s-%s" .Release.Name "clair" | trunc 63 | trimSuffix "-" -}}
+{{- end -}}

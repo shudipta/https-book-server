@@ -26,7 +26,6 @@ config:
   # postgresURI: "postgres://user:password@host:5432/postgres?sslmode=disable"
   paginationKey: "XxoPtCUzrUv4JV5dS+yQ+MdW7yLEJnRMwigVY/bpgtQ="
   updateInterval: 2h
-  notificationWebhookEndpoint: https://example.com/notify/me
   enabledUpdaters:
   - debian
   - ubuntu
@@ -43,6 +42,10 @@ config:
   - apk
   - dpkg
   - rpm
+
+scanner:
+  enabled: false
+
 # Configuration values for the postgresql dependency.
 # ref: https://github.com/kubernetes/charts/blob/master/stable/postgresql/README.md
 postgresql:

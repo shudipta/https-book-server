@@ -48,9 +48,9 @@ data:
         # https://github.com/coreos/etcd-ca
         # https://github.com/cloudflare/cfssl
         servername:
-        cafile:
-        keyfile:
-        certfile:
+        cafile: /var/run/secrets/clair/ca.crt
+        keyfile: /var/run/secrets/clair/server.key
+        certfile: /var/run/secrets/clair/server.crt
 
       worker:
         namespace_detectors:
@@ -80,8 +80,21 @@ data:
         renotifyinterval: 2h
 
         http:
+{{- if .Values.scanner.enabled }}
           # Optional endpoint that will receive notifications via POST requests
-          endpoint: "{{ .Values.config.notificationWebhookEndpoint }}"
+          endpoint: https://{{ template "scanner.release" . }}.{{ .Release.Namespace }}.svc:443/clair
+
+          # Optional PKI configuration
+          # If you want to easily generate client certificates and CAs, try the following projects:
+          # https://github.com/cloudflare/cfssl
+          # https://github.com/coreos/etcd-ca
+          servername:
+          cafile: /var/run/secrets/scanner/ca.crt
+          keyfile: /var/run/secrets/scanner/client.key
+          certfile: /var/run/secrets/scanner/client.crt
+{{ else }}
+          # Optional endpoint that will receive notifications via POST requests
+          endpoint:
 
           # Optional PKI configuration
           # If you want to easily generate client certificates and CAs, try the following projects:
@@ -91,6 +104,7 @@ data:
           cafile:
           keyfile:
           certfile:
+{{- end }}
 
           # Optional HTTP Proxy: must be a valid URL (including the scheme).
           proxy:

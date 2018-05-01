@@ -127,7 +127,7 @@ Now, under notifier field in `config-tls.yaml` file, we have to provide the path
 
     http:
       # Optional endpoint that will receive notifications via POST requests
-      endpoint: https://scanner.kube-system.svc:443/audit-log
+      endpoint: https://scanner.kube-system.svc:443/clair
 
       # Optional PKI configuration
       # If you want to easily generate client certificates and CAs, try the following projects:

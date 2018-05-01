@@ -55,8 +55,8 @@ echo "running clair"
 
 # Exporting certificates for clair notifier.
 export CLAIR_NOTIFIER_SERVING_CERT_CA=$(cat pki/scanner/ca.crt | $ONESSL base64)
-export CLAIR_NOTIFIER_CLIENT_CERT=$(cat pki/scanner/client@clair.crt | $ONESSL base64)
-export CLAIR_NOTIFIER_CLIENT_KEY=$(cat pki/scanner/client@clair.key | $ONESSL base64)
+export NOTIFIER_CLIENT_CERT=$(cat pki/scanner/client@clair.crt | $ONESSL base64)
+export NOTIFIER_CLIENT_KEY=$(cat pki/scanner/client@clair.key | $ONESSL base64)
 
 # Exporting certificates for clair api.
 export CLAIR_API_SERVING_CERT_CA=$(cat pki/clair/ca.crt | $ONESSL base64)

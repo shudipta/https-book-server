@@ -18,10 +18,6 @@ spec:
       labels:
         app: {{ template "clair.fullname" . }}
     spec:
-      volumes:
-      - name: "{{ .Chart.Name }}-config"
-        configMap:
-          name: {{ template "clair.fullname" . }}
       containers:
       - name: {{ .Chart.Name }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -44,8 +40,28 @@ spec:
           httpGet:
             path: /health
             port: {{ .Values.service.internalHealthPort }}
-        volumeMounts:
-        - name: "{{ .Chart.Name }}-config"
-          mountPath: /etc/clair
         resources:
 {{ toYaml .Values.resources | indent 10 }}
+        volumeMounts:
+        - mountPath: /etc/clair
+          name: clair-config
+        - mountPath: /var/run/secrets/clair
+          name: clair-server-cert
+          readOnly: true
+{{- if .Values.scanner.enabled }}
+        - mountPath: /var/run/secrets/scanner
+          name: clair-notifier-cert
+          readOnly: true
+{{- end }}
+      volumes:
+      - name: clair-config
+        configMap:
+          name: {{ template "clair.fullname" . }}
+      - name: clair-server-cert
+        secret:
+          secretName: {{ template "clair.fullname" . }}-server-cert
+{{- if .Values.scanner.enabled }}
+      - name: clair-notifier-cert
+        secret:
+          secretName: {{ template "scanner.release" . }}-notifier-cert
+{{- end }}
