@@ -2,9 +2,9 @@
 title: Reference
 description: Scanner CLI Reference
 menu:
-  product_scanner_0.1.0-alpha.0:
+  product_scanner_0.1.0:
     identifier: reference
     name: Reference
     weight: 1000
-menu_name: product_scanner_0.1.0-alpha.0
+menu_name: product_scanner_0.1.0
 ---

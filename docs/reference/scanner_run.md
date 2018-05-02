@@ -1,12 +1,12 @@
 ---
 title: Scanner Run
 menu:
-  product_scanner_0.1.0-alpha.0:
+  product_scanner_0.1.0:
     identifier: scanner-run
     name: Scanner Run
     parent: reference
 product_name: scanner
-menu_name: product_scanner_0.1.0-alpha.0
+menu_name: product_scanner_0.1.0
 section_menu_id: reference
 ---
 ## scanner run
