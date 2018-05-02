@@ -53,7 +53,7 @@ spec:
     spec:
       containers:
       - name: clair
-        image: quay.io/coreos/clair-git:latest
+        image: soter/clair:latest
         args:
           - "-config"
           - "/config/config-tls.yaml"

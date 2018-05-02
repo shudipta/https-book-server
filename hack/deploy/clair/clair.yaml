@@ -62,7 +62,7 @@ spec:
     spec:
       containers:
       - name: clair
-        image: quay.io/coreos/clair-git:latest
+        image: ${SCANNER_DOCKER_REGISTRY}/clair:latest
         imagePullPolicy: Always
         args:
         - "-config"

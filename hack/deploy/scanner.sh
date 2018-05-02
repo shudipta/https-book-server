@@ -98,6 +98,7 @@ export SCANNER_IMAGE_PULL_SECRET=
 export SCANNER_IMAGE_PULL_POLICY=IfNotPresent
 export SCANNER_ENABLE_ANALYTICS=true
 export SCANNER_UNINSTALL=0
+export SCANNER_PURGE=0
 
 export APPSCODE_ENV=${APPSCODE_ENV:-prod}
 export SCRIPT_LOCATION="curl -fsSL https://raw.githubusercontent.com/soter/scanner/master/"
@@ -112,7 +113,7 @@ KUBE_APISERVER_VERSION=$(kubectl version -o=json | $ONESSL jsonpath '{.serverVer
 $ONESSL semver --check='>=1.9.0' $KUBE_APISERVER_VERSION || { echo "Scanner requires Kubernetes 1.9.0 or later version"; echo; exit 1; }
 
 show_help() {
-    echo "scanner.sh - install scanner"
+    echo "scanner.sh - install Docker image scanner"
     echo " "
     echo "scanner.sh [options]"
     echo " "
@@ -127,6 +128,7 @@ show_help() {
     echo "    --enable-validating-webhook    enable/disable validating webhooks for Scanner"
     echo "    --enable-analytics             send usage events to Google Analytics (default: true)"
     echo "    --uninstall                    uninstall scanner"
+    echo "    --purge                        purges Clair installation"
 }
 
 while test $# -gt 0; do
@@ -192,6 +194,10 @@ while test $# -gt 0; do
             export SCANNER_UNINSTALL=1
             shift
             ;;
+        --purge)
+            export SCANNER_PURGE=1
+            shift
+            ;;
         *)
             show_help
             exit 1
@@ -226,12 +232,17 @@ if [ "$SCANNER_UNINSTALL" -eq 1 ]; then
        sleep 2
     done
 
-    echo "Uninstalling Clair ..."
-    kubectl delete configmap -l app=clair -n $SCANNER_NAMESPACE
-    (${SCRIPT_LOCATION}hack/deploy/clair/clair.yaml | $ONESSL envsubst | kubectl delete -f -) || true
+    if [ "$SCANNER_PURGE" -eq 1 ]; then
+        echo "waiting 5 seconds ..."
+        sleep 5;
 
-    echo "Uninstalling Clair PostgreSQL ..."
-    (${SCRIPT_LOCATION}hack/deploy/clair/postgresql.yaml | $ONESSL envsubst | kubectl delete -f -) || true
+        echo "Uninstalling Clair ..."
+        kubectl delete configmap -l app=clair -n $SCANNER_NAMESPACE
+        (${SCRIPT_LOCATION}hack/deploy/clair/clair.yaml | $ONESSL envsubst | kubectl delete -f -) || true
+
+        echo "Uninstalling Clair PostgreSQL ..."
+        (${SCRIPT_LOCATION}hack/deploy/clair/postgresql.yaml | $ONESSL envsubst | kubectl delete -f -) || true
+    fi
 
     echo
     echo "Successfully uninstalled Scanner!"
@@ -241,6 +252,12 @@ fi
 echo "checking whether extended apiserver feature is enabled"
 $ONESSL has-keys configmap --namespace=kube-system --keys=requestheader-client-ca-file extension-apiserver-authentication || { echo "Set --requestheader-client-ca-file flag on Kubernetes apiserver"; exit 1; }
 echo ""
+
+export KUBE_CA=
+if [ "$SCANNER_ENABLE_VALIDATING_WEBHOOK" = true ]; then
+    $ONESSL get kube-ca >/dev/null 2>&1 || { echo "Admission webhooks can't be used when kube apiserver is accesible without verifying its TLS certificate (insecure-skip-tls-verify : true)."; echo; exit 1; }
+    export KUBE_CA=$($ONESSL get kube-ca | $ONESSL base64)
+fi
 
 env | sort | grep SCANNER*
 echo ""
@@ -278,8 +295,6 @@ export CLAIR_API_SERVER_CERT=$(cat pki/clair/server.crt | $ONESSL base64)
 export CLAIR_API_SERVER_KEY=$(cat pki/clair/server.key | $ONESSL base64)
 export CLAIR_API_CLIENT_CERT=$(cat pki/clair/client.crt | $ONESSL base64)
 export CLAIR_API_CLIENT_KEY=$(cat pki/clair/client.key | $ONESSL base64)
-
-export KUBE_CA=$($ONESSL get kube-ca | $ONESSL base64)
 
 # Running Clair PostgreSQL
 echo
