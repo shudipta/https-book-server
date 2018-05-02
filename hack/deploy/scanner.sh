@@ -101,7 +101,7 @@ export SCANNER_UNINSTALL=0
 export SCANNER_PURGE=0
 
 export APPSCODE_ENV=${APPSCODE_ENV:-prod}
-export SCRIPT_LOCATION="curl -fsSL https://raw.githubusercontent.com/soter/scanner/master/"
+export SCRIPT_LOCATION="curl -fsSL https://raw.githubusercontent.com/soter/scanner/0.1.0/"
 if [ "$APPSCODE_ENV" = "dev" ]; then
     detect_tag
     export SCRIPT_LOCATION="cat "
