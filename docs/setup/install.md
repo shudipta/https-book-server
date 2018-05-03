@@ -14,7 +14,7 @@ section_menu_id: setup
 
 # Installation Guide
 
-Scanner can be installed via a script or as a Helm chart. Installer will deploy Clair with its PostgreSQL database and Scanner as a Kubernetes {validating webhook admission controller](https://kubernetes.io/docs/admin/admission-controllers/#validatingadmissionwebhook-alpha-in-18-beta-in-19) for workloads.
+Scanner can be installed via a script or as a Helm chart. Installer will deploy Clair with its PostgreSQL database and Scanner as a Kubernetes [validating webhook admission controller](https://kubernetes.io/docs/admin/admission-controllers/#validatingadmissionwebhook-alpha-in-18-beta-in-19) for workloads.
 
 ## Using Script
 
