@@ -100,6 +100,7 @@ def lint():
 
 def gen():
     die(call('go generate pkg/types/failurepolicy.go'))
+    die(call('go generate pkg/types/severity.go'))
 
 
 def build_cmd(name):

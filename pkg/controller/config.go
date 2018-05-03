@@ -12,6 +12,7 @@ import (
 type config struct {
 	//ClairAddress  string
 	//ClairCertDir  string
+	Severity      types.Severity
 	FailurePolicy types.FailurePolicy
 }
 

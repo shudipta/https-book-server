@@ -54,6 +54,7 @@ scanner run [flags]
       --enable-swagger-ui                                       Enables swagger ui on the apiserver at /swagger-ui
       --failure-policy FailurePolicy                            Define how errors from the docker registry are handled. Allowed values are Ignore or Fail. (default Ignore)
   -h, --help                                                    help for run
+      --highest-acceptable-severity Severity                    Defines the highest acceptable level of vulnerability. If an image contains a vulnerable feature with higher severity, it will be rejected by validating webhook. If an image contains vulnerabilities at this level or lower, the image will be allowed to run. (default Low)
       --kubeconfig string                                       kubeconfig file pointing at the 'core' kubernetes server.
       --profiling                                               Enable profiling via web interface host:port/debug/pprof/ (default true)
       --qps float                                               The maximum QPS to the master from this client (default 100)

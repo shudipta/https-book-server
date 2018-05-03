@@ -1,17 +1,29 @@
 package v1alpha1
 
-func (r ScanResult) HasVulnerabilities() bool {
+import (
+	"github.com/appscode/go/log"
+	"github.com/soter/scanner/pkg/types"
+)
+
+func (r ScanResult) HasVulnerabilities(maxAccepted types.Severity) bool {
 	for _, feature := range r.Features {
-		if len(feature.Vulnerabilities) > 0 {
-			return true
+		for _, vul := range feature.Vulnerabilities {
+			reported, err := types.ParseSeverity(vul.Severity)
+			if err != nil {
+				log.Warningf("failed to parse severity level %s of feature %s:%s", vul.Severity, feature.Name, feature.Version)
+				reported = types.SeverityUnknown
+			}
+			if reported < maxAccepted {
+				return true
+			}
 		}
 	}
 	return false
 }
 
-func (r ImageReviewResponse) HasVulnerabilities() bool {
+func (r ImageReviewResponse) HasVulnerabilities(maxAccepted types.Severity) bool {
 	for _, img := range r.Images {
-		if img.HasVulnerabilities() {
+		if img.HasVulnerabilities(maxAccepted) {
 			return true
 		}
 	}

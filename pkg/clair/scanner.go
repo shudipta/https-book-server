@@ -35,6 +35,7 @@ type Scanner struct {
 
 	AncestryClient     clairpb.AncestryServiceClient
 	NotificationClient clairpb.NotificationServiceClient
+	severity           types.Severity
 	failurePolicy      types.FailurePolicy
 	cache              *lru.Cache
 }
@@ -53,7 +54,7 @@ func NewClient(addr string, certDir string) (clairpb.AncestryServiceClient, clai
 		nil
 }
 
-func NewScanner(config *rest.Config, addr string, certDir string, failurePolicy types.FailurePolicy) (*Scanner, error) {
+func NewScanner(config *rest.Config, addr string, certDir string, severity types.Severity, failurePolicy types.FailurePolicy) (*Scanner, error) {
 	kc, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return nil, err
@@ -86,6 +87,7 @@ func NewScanner(config *rest.Config, addr string, certDir string, failurePolicy 
 		wc:                 wc,
 		AncestryClient:     clairpb.NewAncestryServiceClient(conn),
 		NotificationClient: clairpb.NewNotificationServiceClient(conn),
+		severity:           severity,
 		failurePolicy:      failurePolicy,
 		cache:              cache,
 	}
@@ -105,7 +107,7 @@ func (c *Scanner) ScanCluster() error {
 				return err
 			} else {
 				resp := api.ImageReviewResponse{Images: result}
-				if resp.HasVulnerabilities() {
+				if resp.HasVulnerabilities(c.severity) {
 					ref, err := reference.GetReference(scheme.Scheme, w.Object)
 					if err == nil {
 						c.recorder.Event(ref, core.EventTypeWarning, "VulnerabilityFound", "image has vulnerability")

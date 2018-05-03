@@ -35,7 +35,7 @@ func (c *Controller) checkWorkload(w *wpi.Workload) (runtime.Object, error) {
 		return nil, err
 	} else {
 		resp := api.ImageReviewResponse{Images: result}
-		if resp.HasVulnerabilities() {
+		if resp.HasVulnerabilities(c.Severity) {
 			ref, err := reference.GetReference(scheme.Scheme, w.Object)
 			if err == nil {
 				c.recorder.Event(ref, core.EventTypeWarning, "VulnerabilityFound", "image has vulnerability")
