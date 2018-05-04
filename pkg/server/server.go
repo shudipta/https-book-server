@@ -5,12 +5,10 @@ import (
 	"strings"
 
 	hooks "github.com/appscode/kubernetes-webhook-util/admission/v1beta1"
-	wpi "github.com/appscode/kubernetes-webhook-util/apis/workload/v1"
 	admissionreview "github.com/appscode/kubernetes-webhook-util/registry/admissionreview/v1beta1"
 	"github.com/soter/scanner/apis/scanner/install"
 	"github.com/soter/scanner/apis/scanner/v1alpha1"
 	"github.com/soter/scanner/pkg/controller"
-	irregistry "github.com/soter/scanner/pkg/registry/scanner/imagereview"
 	"github.com/soter/scanner/pkg/routes"
 	admission "k8s.io/api/admission/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -24,6 +22,8 @@ import (
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/apiserver/pkg/registry/rest"
 	genericapiserver "k8s.io/apiserver/pkg/server"
+	"github.com/soter/scanner/apis/scanner"
+	"github.com/soter/scanner/pkg/registry/scanner/ircreate"
 )
 
 var (
@@ -208,79 +208,92 @@ func (c completedConfig) New() (*ScannerServer, error) {
 		)
 	}
 
+	//{
+	//	accessor := meta.NewAccessor()
+	//	versionInterfaces := &meta.VersionInterfaces{
+	//		ObjectConvertor:  Scheme,
+	//		MetadataAccessor: accessor,
+	//	}
+	//
+	//	interfacesFor := func(version schema.GroupVersion) (*meta.VersionInterfaces, error) {
+	//		if version != v1alpha1.SchemeGroupVersion {
+	//			return nil, fmt.Errorf("unexpected version %v", version)
+	//		}
+	//		return versionInterfaces, nil
+	//	}
+	//	restMapper := meta.NewDefaultRESTMapper([]schema.GroupVersion{v1alpha1.SchemeGroupVersion}, interfacesFor)
+	//	// TODO we're going to need a later k8s.io/apiserver so that we can get discovery to list a different group version for
+	//	// our endpoint which we'll use to back some custom storage which will consume the AdmissionReview type and give back the correct response
+	//	apiGroupInfo := genericapiserver.APIGroupInfo{
+	//		GroupMeta: apimachinery.GroupMeta{
+	//			// filled in later
+	//			//GroupVersion:  admissionVersion,
+	//			//GroupVersions: []schema.GroupVersion{admissionVersion},
+	//
+	//			SelfLinker:    runtime.SelfLinker(accessor),
+	//			RESTMapper:    restMapper,
+	//			InterfacesFor: interfacesFor,
+	//			InterfacesByVersion: map[schema.GroupVersion]*meta.VersionInterfaces{
+	//				v1alpha1.SchemeGroupVersion: versionInterfaces,
+	//			},
+	//		},
+	//		VersionedResourcesStorageMap: map[string]map[string]rest.Storage{},
+	//		// TODO unhardcode this.  It was hardcoded before, but we need to re-evaluate
+	//		OptionsExternalVersion: &schema.GroupVersion{Version: "v1"},
+	//		Scheme:                 Scheme,
+	//		ParameterCodec:         metav1.ParameterCodec,
+	//		NegotiatedSerializer:   Codecs,
+	//	}
+	//
+	//	scanners := []irregistry.ScannerStorage{
+	//		irregistry.NewREST(c.ScannerConfig.Scanner, v1alpha1.SchemeGroupVersion.WithResource(wpi.ResourcePods), wpi.ResourcePod),
+	//		irregistry.NewREST(c.ScannerConfig.Scanner, v1alpha1.SchemeGroupVersion.WithResource(wpi.ResourceDeployments), wpi.ResourceDeployment),
+	//		irregistry.NewREST(c.ScannerConfig.Scanner, v1alpha1.SchemeGroupVersion.WithResource(wpi.ResourceReplicaSets), wpi.ResourceReplicaSet),
+	//		irregistry.NewREST(c.ScannerConfig.Scanner, v1alpha1.SchemeGroupVersion.WithResource(wpi.ResourceReplicationControllers), wpi.ResourceReplicationController),
+	//		irregistry.NewREST(c.ScannerConfig.Scanner, v1alpha1.SchemeGroupVersion.WithResource(wpi.ResourceStatefulSets), wpi.ResourceStatefulSet),
+	//		irregistry.NewREST(c.ScannerConfig.Scanner, v1alpha1.SchemeGroupVersion.WithResource(wpi.ResourceDaemonSets), wpi.ResourceDaemonSet),
+	//		irregistry.NewREST(c.ScannerConfig.Scanner, v1alpha1.SchemeGroupVersion.WithResource(wpi.ResourceJobs), wpi.ResourceJob),
+	//		irregistry.NewREST(c.ScannerConfig.Scanner, v1alpha1.SchemeGroupVersion.WithResource(wpi.ResourceCronJobs), wpi.ResourceCronJob),
+	//		irregistry.NewREST(c.ScannerConfig.Scanner, v1alpha1.SchemeGroupVersion.WithResource(wpi.ResourceDeploymentConfigs), wpi.ResourceDeploymentConfig),
+	//	}
+	//
+	//	for i := range scanners {
+	//		s := scanners[i]
+	//		plural, singular := s.Resource()
+	//		gv := plural.GroupVersion()
+	//
+	//		restMapper.AddSpecific(
+	//			v1alpha1.SchemeGroupVersion.WithKind("ImageReview"),
+	//			plural,
+	//			gv.WithResource(singular),
+	//			meta.RESTScopeRoot)
+	//
+	//		// just overwrite the groupversion with a random one.  We don't really care or know.
+	//		apiGroupInfo.GroupMeta.GroupVersions = appendUniqueGroupVersion(apiGroupInfo.GroupMeta.GroupVersions, gv)
+	//
+	//		v1alpha1storage, ok := apiGroupInfo.VersionedResourcesStorageMap[gv.Version]
+	//		if !ok {
+	//			v1alpha1storage = map[string]rest.Storage{}
+	//		}
+	//		v1alpha1storage[plural.Resource] = s
+	//		apiGroupInfo.VersionedResourcesStorageMap[gv.Version] = v1alpha1storage
+	//		oneliners.PrettyJson(s.(*irregistry.REST), "["+gv.Version+"]["+plural.Resource+"]")
+	//	}
+	//
+	//	// just prefer the first one in the list for consistency
+	//	apiGroupInfo.GroupMeta.GroupVersion = v1alpha1.SchemeGroupVersion // apiGroupInfo.GroupMeta.GroupVersions[0]
+	//	if err := s.GenericAPIServer.InstallAPIGroup(&apiGroupInfo); err != nil {
+	//		return nil, err
+	//	}
+	//}
+
 	{
-		accessor := meta.NewAccessor()
-		versionInterfaces := &meta.VersionInterfaces{
-			ObjectConvertor:  Scheme,
-			MetadataAccessor: accessor,
-		}
+		apiGroupInfo := genericapiserver.NewDefaultAPIGroupInfo(scanner.GroupName, registry, Scheme, metav1.ParameterCodec, Codecs)
+		apiGroupInfo.GroupMeta.GroupVersion = v1alpha1.SchemeGroupVersion
+		v1alpha1storage := map[string]rest.Storage{}
+		v1alpha1storage[v1alpha1.ResourcePluralImageReview] = ircreate.NewREST(c.ScannerConfig.Scanner)
+		apiGroupInfo.VersionedResourcesStorageMap["v1alpha1"] = v1alpha1storage
 
-		interfacesFor := func(version schema.GroupVersion) (*meta.VersionInterfaces, error) {
-			if version != v1alpha1.SchemeGroupVersion {
-				return nil, fmt.Errorf("unexpected version %v", version)
-			}
-			return versionInterfaces, nil
-		}
-		restMapper := meta.NewDefaultRESTMapper([]schema.GroupVersion{v1alpha1.SchemeGroupVersion}, interfacesFor)
-		// TODO we're going to need a later k8s.io/apiserver so that we can get discovery to list a different group version for
-		// our endpoint which we'll use to back some custom storage which will consume the AdmissionReview type and give back the correct response
-		apiGroupInfo := genericapiserver.APIGroupInfo{
-			GroupMeta: apimachinery.GroupMeta{
-				// filled in later
-				//GroupVersion:  admissionVersion,
-				//GroupVersions: []schema.GroupVersion{admissionVersion},
-
-				SelfLinker:    runtime.SelfLinker(accessor),
-				RESTMapper:    restMapper,
-				InterfacesFor: interfacesFor,
-				InterfacesByVersion: map[schema.GroupVersion]*meta.VersionInterfaces{
-					v1alpha1.SchemeGroupVersion: versionInterfaces,
-				},
-			},
-			VersionedResourcesStorageMap: map[string]map[string]rest.Storage{},
-			// TODO unhardcode this.  It was hardcoded before, but we need to re-evaluate
-			OptionsExternalVersion: &schema.GroupVersion{Version: "v1"},
-			Scheme:                 Scheme,
-			ParameterCodec:         metav1.ParameterCodec,
-			NegotiatedSerializer:   Codecs,
-		}
-
-		scanners := []irregistry.ScannerStorage{
-			irregistry.NewREST(c.ScannerConfig.Scanner, v1alpha1.SchemeGroupVersion.WithResource(wpi.ResourcePods), wpi.ResourcePod),
-			irregistry.NewREST(c.ScannerConfig.Scanner, v1alpha1.SchemeGroupVersion.WithResource(wpi.ResourceDeployments), wpi.ResourceDeployment),
-			irregistry.NewREST(c.ScannerConfig.Scanner, v1alpha1.SchemeGroupVersion.WithResource(wpi.ResourceReplicaSets), wpi.ResourceReplicaSet),
-			irregistry.NewREST(c.ScannerConfig.Scanner, v1alpha1.SchemeGroupVersion.WithResource(wpi.ResourceReplicationControllers), wpi.ResourceReplicationController),
-			irregistry.NewREST(c.ScannerConfig.Scanner, v1alpha1.SchemeGroupVersion.WithResource(wpi.ResourceStatefulSets), wpi.ResourceStatefulSet),
-			irregistry.NewREST(c.ScannerConfig.Scanner, v1alpha1.SchemeGroupVersion.WithResource(wpi.ResourceDaemonSets), wpi.ResourceDaemonSet),
-			irregistry.NewREST(c.ScannerConfig.Scanner, v1alpha1.SchemeGroupVersion.WithResource(wpi.ResourceJobs), wpi.ResourceJob),
-			irregistry.NewREST(c.ScannerConfig.Scanner, v1alpha1.SchemeGroupVersion.WithResource(wpi.ResourceCronJobs), wpi.ResourceCronJob),
-			irregistry.NewREST(c.ScannerConfig.Scanner, v1alpha1.SchemeGroupVersion.WithResource(wpi.ResourceDeploymentConfigs), wpi.ResourceDeploymentConfig),
-		}
-
-		for i := range scanners {
-			s := scanners[i]
-			plural, singular := s.Resource()
-			gv := plural.GroupVersion()
-
-			restMapper.AddSpecific(
-				v1alpha1.SchemeGroupVersion.WithKind("ImageReview"),
-				plural,
-				gv.WithResource(singular),
-				meta.RESTScopeRoot)
-
-			// just overwrite the groupversion with a random one.  We don't really care or know.
-			apiGroupInfo.GroupMeta.GroupVersions = appendUniqueGroupVersion(apiGroupInfo.GroupMeta.GroupVersions, gv)
-
-			v1alpha1storage, ok := apiGroupInfo.VersionedResourcesStorageMap[gv.Version]
-			if !ok {
-				v1alpha1storage = map[string]rest.Storage{}
-			}
-			v1alpha1storage[plural.Resource] = s
-			apiGroupInfo.VersionedResourcesStorageMap[gv.Version] = v1alpha1storage
-		}
-
-		// just prefer the first one in the list for consistency
-		apiGroupInfo.GroupMeta.GroupVersion = v1alpha1.SchemeGroupVersion // apiGroupInfo.GroupMeta.GroupVersions[0]
 		if err := s.GenericAPIServer.InstallAPIGroup(&apiGroupInfo); err != nil {
 			return nil, err
 		}

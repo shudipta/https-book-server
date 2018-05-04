@@ -3,6 +3,7 @@ kind: ImageReview
 metadata:
   name: test
   namespace: default
+#  namespace: scanner-e2e-tuev3l
 #spec:
 request:
 #  image: appscode/voyager:6.0.0

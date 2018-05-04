@@ -106,7 +106,8 @@ if [ "$APPSCODE_ENV" = "dev" ]; then
     detect_tag
     export SCRIPT_LOCATION="cat "
     export SCANNER_IMAGE_TAG=$TAG
-    export SCANNER_IMAGE_PULL_POLICY=Always
+#    export SCANNER_IMAGE_PULL_POLICY=Always
+    export SCANNER_IMAGE_PULL_POLICY=IfNotPresent
 fi
 
 KUBE_APISERVER_VERSION=$(kubectl version -o=json | $ONESSL jsonpath '{.serverVersion.gitVersion}')
@@ -206,6 +207,7 @@ while test $# -gt 0; do
 done
 
 if [ "$SCANNER_UNINSTALL" -eq 1 ]; then
+
     echo "Uninstalling Scanner ..."
     # delete webhooks and apiservices
     kubectl delete validatingwebhookconfiguration -l app=scanner
@@ -287,14 +289,14 @@ $ONESSL create client-cert client --cert-dir=pki/clair
 export SERVICE_SERVING_CERT_CA=$(cat pki/scanner/ca.crt | $ONESSL base64)
 export TLS_SERVING_CERT=$(cat pki/scanner/server.crt | $ONESSL base64)
 export TLS_SERVING_KEY=$(cat pki/scanner/server.key | $ONESSL base64)
-export NOTIFIER_CLIENT_CERT=$(cat pki/scanner/client.crt | $ONESSL base64)
-export NOTIFIER_CLIENT_KEY=$(cat pki/scanner/client.key | $ONESSL base64)
+export NOTIFIER_CLIENT_CERT=$(cat pki/scanner/client@.crt | $ONESSL base64)
+export NOTIFIER_CLIENT_KEY=$(cat pki/scanner/client@.key | $ONESSL base64)
 
 export CLAIR_API_SERVING_CERT_CA=$(cat pki/clair/ca.crt | $ONESSL base64)
 export CLAIR_API_SERVER_CERT=$(cat pki/clair/server.crt | $ONESSL base64)
 export CLAIR_API_SERVER_KEY=$(cat pki/clair/server.key | $ONESSL base64)
-export CLAIR_API_CLIENT_CERT=$(cat pki/clair/client.crt | $ONESSL base64)
-export CLAIR_API_CLIENT_KEY=$(cat pki/clair/client.key | $ONESSL base64)
+export CLAIR_API_CLIENT_CERT=$(cat pki/clair/client@.crt | $ONESSL base64)
+export CLAIR_API_CLIENT_KEY=$(cat pki/clair/client@.key | $ONESSL base64)
 
 # Running Clair PostgreSQL
 echo

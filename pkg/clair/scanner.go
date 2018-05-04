@@ -26,6 +26,8 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/tools/reference"
+	"k8s.io/apimachinery/pkg/runtime"
+	appsv1beta1 "k8s.io/api/apps/v1beta1"
 )
 
 type Scanner struct {
@@ -76,12 +78,14 @@ func NewScanner(config *rest.Config, addr string, certDir string, severity types
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to get dial option for tls")
 		}
+
 		opts = append(opts, tlsOption)
 	}
 	conn, err := grpc.Dial(addr, opts...)
 	if err != nil {
 		return nil, err
 	}
+
 	ctrl := &Scanner{
 		kc:                 kc,
 		wc:                 wc,
@@ -119,6 +123,57 @@ func (c *Scanner) ScanCluster() error {
 	}
 
 	return utilerrors.NewAggregate(errs)
+}
+
+func (c *Scanner) CreateForScan(kindOrResource, namespace string, req *api.ImageReview) (runtime.Object, error) {
+	labels := map[string]string{
+		"app":"scanner-test",
+	}
+	t := metav1.TypeMeta{APIVersion: appsv1beta1.SchemeGroupVersion.String(), Kind: kindOrResource}
+	o := metav1.ObjectMeta{Name: req.Name, Namespace: namespace, Labels: labels}
+	obj := wcs.NewWorkload(t, o, core.PodTemplateSpec{
+		ObjectMeta: metav1.ObjectMeta{Labels: labels},
+		Spec: core.PodSpec{
+			Containers: []core.Container{
+				{
+					Name: req.Name,
+					Image: req.Request.Image,
+				},
+			},
+			ImagePullSecrets: req.Request.ImagePullSecrets,
+		},
+	})
+	//obj, err := wcs.NewObject(kindOrResource, req.Name, namespace)
+	//if err != nil {
+	//	return nil, err
+	//}
+	////obj := &core.Pod{
+	////	ObjectMeta: metav1.ObjectMeta{Name: req.Name, Namespace: namespace},
+	////	Spec: core.PodSpec{
+	////		Containers: []core.Container{
+	////			{
+	////				Name: req.Name,
+	////				Image: req.Request.Image,
+	////			},
+	////		},
+	////		ImagePullSecrets: req.Request.ImagePullSecrets,
+	////	},
+	////}
+	//obj.(*core.Pod).Spec = core.PodSpec{
+	//	Containers: []core.Container{
+	//		{
+	//			Name: req.Name,
+	//			Image: req.Request.Image,
+	//		},
+	//	},
+	//	ImagePullSecrets: req.Request.ImagePullSecrets,
+	//}
+	//w, err := wcs.ConvertToWorkload(obj)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//return c.wc.Workloads(namespace).Create(w)
+	return c.wc.Workloads(namespace).Create(obj)
 }
 
 func (c *Scanner) ScanWorkload(kindOrResource, name, namespace string) ([]api.ScanResult, error) {

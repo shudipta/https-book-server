@@ -2,6 +2,7 @@ package scanner
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/kubernetes/pkg/apis/core"
 )
 
 type Vulnerability struct {
@@ -30,6 +31,14 @@ type ScanResult struct {
 	Features []Feature
 }
 
+type ImageReviewRequest struct {
+	// +optional
+	Image string
+
+	// +optional
+	ImagePullSecrets []core.LocalObjectReference
+}
+
 type ImageReviewResponse struct {
 	Images []ScanResult `json:"images,omitempty"`
 }
@@ -42,6 +51,9 @@ type ImageReviewResponse struct {
 type ImageReview struct {
 	metav1.TypeMeta
 	metav1.ObjectMeta
+
+	// +optional
+	Request *ImageReviewRequest
 	// +optional
 	Response *ImageReviewResponse
 }
