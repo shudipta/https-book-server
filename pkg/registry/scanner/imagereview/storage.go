@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	apirequest "k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
+	"github.com/tamalsaha/go-oneliners"
 )
 
 type ScannerStorage interface {
@@ -22,7 +23,7 @@ type REST struct {
 	singular string
 }
 
-//var _ rest.Creater = &REST{}
+var _ rest.Creater = &REST{}
 var _ rest.Getter = &REST{}
 var _ rest.GroupVersionKindProvider = &REST{}
 
@@ -46,18 +47,19 @@ func (r *REST) New() runtime.Object {
 	return &api.ImageReview{}
 }
 
-//func (r *REST) Create(ctx apirequest.Context, obj runtime.Object, _ rest.ValidateObjectFunc, _ bool) (runtime.Object, error) {
-//	req := obj.(*api.ImageReview)
-//	oneliners.PrettyJson(r, "rest for "+req.Name)
-//	namespace := apirequest.NamespaceValue(ctx)
-//
-//	result, err := r.scanner.ScanWorkload(r.singular, req.Name, namespace)
-//	if err != nil {
-//		return nil, err
-//	}
-//	req.Response = &api.ImageReviewResponse{Images: result}
-//	return req, nil
-//}
+func (r *REST) Create(ctx apirequest.Context, obj runtime.Object, _ rest.ValidateObjectFunc, _ bool) (runtime.Object, error) {
+	req := obj.(*api.ImageReview)
+	oneliners.PrettyJson(r, "rest for "+req.Name)
+	oneliners.PrettyJson(req, "rest create req")
+	namespace := apirequest.NamespaceValue(ctx)
+
+	result, err := r.scanner.ScanWorkload(r.singular, req.Name, namespace)
+	if err != nil {
+		return nil, err
+	}
+	req.Response = &api.ImageReviewResponse{Images: result}
+	return req, nil
+}
 
 func (r *REST) Get(ctx apirequest.Context, name string, options *metav1.GetOptions) (runtime.Object, error) {
 	namespace := apirequest.NamespaceValue(ctx)

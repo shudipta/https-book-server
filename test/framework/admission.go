@@ -14,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	kapi "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
+	"github.com/tamalsaha/go-oneliners"
 )
 
 func (f *Framework) NewScannerOptions(kubeConfigPath string, extraOptions *server.ExtraOptions) *server.ScannerOptions {
@@ -24,6 +25,7 @@ func (f *Framework) NewScannerOptions(kubeConfigPath string, extraOptions *serve
 	opts.RecommendedOptions.CoreAPI.CoreAPIKubeconfigPath = kubeConfigPath
 	opts.RecommendedOptions.SecureServing.BindPort = 8443
 	opts.RecommendedOptions.SecureServing.BindAddress = net.ParseIP("127.0.0.1")
+	oneliners.PrettyJson(extraOptions, "extraoptions")
 	opts.ExtraOptions = extraOptions
 	opts.StdErr = os.Stderr
 	opts.StdOut = os.Stdout
