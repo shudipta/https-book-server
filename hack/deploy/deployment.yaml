@@ -39,7 +39,7 @@ spec:
         # - /var/book-serving-cert/srv.crt
         # - /var/book-serving-cert/ca.crt
         image: shudipta/https-book-server:v1
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8443
         volumeMounts:

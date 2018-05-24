@@ -12,7 +12,7 @@ docker build -t shudipta/https-book-server:v1 hack/docker/
 docker push shudipta/https-book-server:v1
 docker save shudipta/https-book-server:v1 | pv | (eval $(minikube docker-env) && docker load)
 
-# go run cert-generator/certgen.go
+go run cert-generator/certgen.go
 if [ -x "$(command -v onessl)" ]; then
     export ONESSL=onessl
 else
@@ -23,8 +23,8 @@ fi
 #export certDir="/home/ac/go/src/github.com/soter/scanner/pki/clair"
 export certDir="cert-generator"
 export CA_CERT=$(cat $certDir/ca.crt | $ONESSL base64)
-export SERVER_CERT=$(cat $certDir/srv.crt | $ONESSL base64)
-export SERVER_KEY=$(cat $certDir/srv.key | $ONESSL base64)
+export SERVER_CERT=$(cat $certDir/server.crt | $ONESSL base64)
+export SERVER_KEY=$(cat $certDir/server.key | $ONESSL base64)
 
 kubectl delete secret -l app=https
 kubectl delete svc -l app=https

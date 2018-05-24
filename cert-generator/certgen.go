@@ -20,10 +20,10 @@ const (
 	duration        = 365
 	caCertFilename  = "cert-generator/ca.crt"
 	caKeyFilename   = "cert-generator/ca.key"
-	srvCertFilename = "cert-generator/srv.crt"
-	srvKeyFilename  = "cert-generator/srv.key"
-	clCertFilename  = "cert-generator/cl.crt"
-	clKeyFilename   = "cert-generator/cl.key"
+	srvCertFilename = "cert-generator/server.crt"
+	srvKeyFilename  = "cert-generator/server.key"
+	clCertFilename  = "cert-generator/client.crt"
+	clKeyFilename   = "cert-generator/client.key"
 	isClient        = false
 )
 
