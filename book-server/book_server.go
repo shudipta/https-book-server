@@ -33,7 +33,7 @@ var srv *http.Server = &http.Server{Addr: Port}
 var tlsConfig *tls.Config
 
 var (
-	u            = "http://localhost:" + Port
+	u            = "https://localhost:" + Port
 	hello        = "/"
 	showBookList = "/showBookList"
 	addBook      = "/addBook"
@@ -61,7 +61,7 @@ func respond(w http.ResponseWriter, r Response) {
 }
 
 func checkAuth(r *http.Request) bool {
-	//return true
+	// return true
 	if !LoggedIn {
 		return true
 	}
@@ -270,7 +270,7 @@ func StartServer(certificateFile, privateKeyFile string) {
 		//IdleTimeout:  120 * time.Second,
 		TLSConfig: tlsConfig,
 	}
-	fmt.Println("server-port-----", srv.Addr)
+	fmt.Printf("server-addr-----%s\n", u)
 	fmt.Println("Login-----", LoggedIn)
 	serverErr := srv.ListenAndServeTLS(certificateFile, privateKeyFile)
 

@@ -41,8 +41,8 @@ func main() {
 	transport := &http.Transport{TLSClientConfig: tlsConfig}
 	client := &http.Client{Transport: transport}
 
-	resp, err := client.Get("https://192.168.99.100:30010")
-	// resp, err := client.Get("https://localhost:8443/")
+	//resp, err := client.Get("https://192.168.99.100:30010")
+	resp, err := client.Get("https://localhost:8443/")
 	if err != nil {
 		fmt.Println(err)
 	}
