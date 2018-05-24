@@ -7,8 +7,8 @@ metadata:
 # type: 
 data:
   ca.crt: ${CA_CERT}
-  srv.crt: ${SERVER_CERT}
-  srv.key: ${SERVER_KEY}
+  server.crt: ${SERVER_CERT}
+  server.key: ${SERVER_KEY}
 ---
 apiVersion: apps/v1beta1
 kind: Deployment
