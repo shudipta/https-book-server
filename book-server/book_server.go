@@ -28,7 +28,7 @@ type Book struct {
 }
 
 var Port = "8443"
-var LoggedIn = true
+var LoggedIn = false
 var srv *http.Server = &http.Server{Addr: Port}
 var tlsConfig *tls.Config
 

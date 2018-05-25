@@ -1,0 +1,123 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ template "https-book-server.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "https-book-server.name" . }}
+    chart: {{ template "https-book-server.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "https-book-server.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "https-book-server.name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      volumes:
+      - name: book-serving-cert
+        secret:
+          # defaultMode: 420
+          secretName: {{ template "https-book-server.fullname" . }}-secret
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.images.server.repository }}:{{ .Values.images.server.tag }}"
+          imagePullPolicy: {{ .Values.images.pullPolicy }}
+          ports:
+          - name: https
+            containerPort: {{ .Values.serverContainerPort }}
+            protocol: TCP
+          volumeMounts:
+          - mountPath: {{ .Values.volumeMounts.serverMountPath }}
+            name: book-serving-cert
+            readOnly: true
+#          livenessProbe:
+#            httpGet:
+#              path: /
+#              port: http
+#          readinessProbe:
+#            httpGet:
+#              path: /
+#              port: http
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+---
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ template "https-book-server.fullname" . }}-client
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "https-book-server.name" . }}-client
+    chart: {{ template "https-book-server.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "https-book-server.name" . }}-client
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "https-book-server.name" . }}-client
+        release: {{ .Release.Name }}
+    spec:
+      volumes:
+      - name: client-serving-cert
+        secret:
+          # defaultMode: 420
+          secretName: {{ template "https-book-server.fullname" . }}-client-secret
+      containers:
+        - name: {{ .Chart.Name }}-client
+          image: "{{ .Values.images.client.repository }}:{{ .Values.images.client.tag }}"
+          imagePullPolicy: {{ .Values.images.pullPolicy }}
+          ports:
+          - name: https
+            containerPort: {{ .Values.clientContainerPort }}
+            protocol: TCP
+          volumeMounts:
+          - mountPath: {{ .Values.volumeMounts.clientMountPath }}
+            name: client-serving-cert
+            readOnly: true
+#          livenessProbe:
+#            httpGet:
+#              path: /
+#              port: http
+#          readinessProbe:
+#            httpGet:
+#              path: /
+#              port: http
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}
