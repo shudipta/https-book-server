@@ -47,7 +47,7 @@ func main() {
 
 	//resp, err := client.Get("https://192.168.99.100:30010")
 	//resp, err := client.Get("https://localhost:8443/")
-	resp, err := client.Get("https://https-book-server.default.svc:8443/")
+	resp, err := client.Get("https://https-practice-https-book-server.default.svc:8443/")
 	if err != nil {
 		fmt.Println(err)
 	}

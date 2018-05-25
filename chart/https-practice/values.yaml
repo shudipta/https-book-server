@@ -7,17 +7,13 @@ replicaCount: 1
 image:
 #  pullPolicy: IfNotPresent
   pullPolicy: Always
-  repository: shudipta/https-book-server
+  repository: shudipta/https-client
   tag: v1
 
 volumeMounts:
-  mountPath: /var/book-serving-cert
+  mountPath: /var/client-serving-cert
 
-service:
-  type: ClusterIP
-  port: 80
-
-containerPort: 8443
+containerPort: 8444
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -36,3 +32,10 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+httpsBookServer:
+  enabled: true
+
+#tls:
+#  ca:
+#  cn: https-practice

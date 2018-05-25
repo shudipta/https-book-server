@@ -1,42 +1,41 @@
 apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
-  name: {{ template "https-book-server.fullname" . }}
-  namespace: {{ .Release.Namespace }}
+  name: {{ template "https-practice.fullname" . }}
   labels:
-    app: {{ template "https-book-server.name" . }}
-    chart: {{ template "https-book-server.chart" . }}
+    app: {{ template "https-practice.name" . }}
+    chart: {{ template "https-practice.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: {{ template "https-book-server.name" . }}
+      app: {{ template "https-practice.name" . }}
       release: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app: {{ template "https-book-server.name" . }}
+        app: {{ template "https-practice.name" . }}
         release: {{ .Release.Name }}
     spec:
       volumes:
-      - name: book-serving-cert
-        secret:
-          # defaultMode: 420
-          secretName: {{ template "https-book-server.fullname" . }}-secret
+        - name: client-serving-cert
+          secret:
+            # defaultMode: 420
+            secretName: {{ template "https-book-server.fullname" . }}-client-secret
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-          - name: https
-            containerPort: {{ .Values.containerPort }}
-            protocol: TCP
+            - name: https
+              containerPort: {{ .Values.containerPort }}
+              protocol: TCP
           volumeMounts:
-          - mountPath: {{ .Values.volumeMounts.mountPath }}
-            name: book-serving-cert
-            readOnly: true
+            - mountPath: {{ .Values.volumeMounts.mountPath }}
+              name: client-serving-cert
+              readOnly: true
 #          livenessProbe:
 #            httpGet:
 #              path: /
