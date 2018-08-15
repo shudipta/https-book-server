@@ -7,8 +7,8 @@ metadata:
 # type: 
 data:
   ca.crt: ${CA_CERT}
-  srv.crt: ${SERVER_CERT}
-  srv.key: ${SERVER_KEY}
+  server.crt: ${SERVER_CERT}
+  server.key: ${SERVER_KEY}
 ---
 apiVersion: apps/v1beta1
 kind: Deployment
@@ -39,7 +39,7 @@ spec:
         # - /var/book-serving-cert/srv.crt
         # - /var/book-serving-cert/ca.crt
         image: shudipta/https-book-server:v1
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         ports:
         - containerPort: 8443
         volumeMounts:
@@ -55,12 +55,12 @@ metadata:
   labels:
     app: https
 spec:
-  type: NodePort
+#  type: NodePort
   ports:
   - name: https-book-server
     protocol: TCP
     port: 8443
     targetPort: 8443
-    nodePort: 30010
+#    nodePort: 30010
   selector:
     app: https

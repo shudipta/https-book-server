@@ -1,0 +1,5 @@
+dependencies:
+  - name: https-book-server
+    version: "*"
+    condition: httpsBookServer.enabled
+    repository: file://../https-book-server

@@ -3,12 +3,12 @@ kind: Secret
 metadata:
   name: https-client
   labels:
-    app: https-client
+    app: https
 # type: 
 data:
   ca.crt: ${CA_CERT}
-  cl.crt: ${CLIENT_CERT}
-  cl.key: ${CLIENT_KEY}
+  client.crt: ${CLIENT_CERT}
+  client.key: ${CLIENT_KEY}
 ---
 apiVersion: apps/v1beta1
 kind: Deployment
@@ -16,16 +16,16 @@ metadata:
   name: https-client
   namespace: default
   labels:
-    app: https-client
+    app: https
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: https-client
+      app: https
   template:
     metadata:
       labels:
-        app: https-client
+        app: https
     spec:
       volumes:
       - name: client-serving-cert
@@ -41,7 +41,7 @@ spec:
         image: shudipta/https-client:v1
         imagePullPolicy: Always
         ports:
-        - containerPort: 8443
+        - containerPort: 8444
         volumeMounts:
         - mountPath: /var/client-serving-cert
           name: client-serving-cert

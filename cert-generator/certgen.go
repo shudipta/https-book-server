@@ -115,21 +115,21 @@ func generate(certificate, parent x509.Certificate, certFilename, keyFilename st
 
 func caCertPair() {
 	// addresses := []string{"192.168.99.100"} //"localhost", "127.0.0.1",
-	addresses := []string{"192.168.99.100", "localhost", "127.0.0.1"}
+	addresses := []string{"192.168.99.100", "localhost", "https-book-server.default.svc", "127.0.0.1"}
 	caCert = newCertificate(organization, commonName, duration, 1, addresses)
 	generate(*caCert, *caCert, caCertFilename, caKeyFilename, true)
 }
 
 func srvCertPair() {
 	// addresses := []string{"192.168.99.100"} //"localhost", "127.0.0.1",
-	addresses := []string{"192.168.99.100", "localhost", "127.0.0.1"}
+	addresses := []string{"192.168.99.100", "localhost", "https-book-server.default.svc", "127.0.0.1"}
 	srvCert = newCertificate(organization, commonName, duration, 2, addresses)
 	generate(*srvCert, *caCert, srvCertFilename, srvKeyFilename, false)
 }
 
 func clCertPair() {
 	// addresses := []string{"192.168.99.100"} //"localhost", "127.0.0.1",
-	addresses := []string{"192.168.99.100", "localhost", "127.0.0.1"}
+	addresses := []string{"192.168.99.100", "localhost", "https-book-server.default.svc", "127.0.0.1"}
 	srvCert = newCertificate(organization, commonName, duration, 3, addresses)
 	generate(*srvCert, *caCert, clCertFilename, clKeyFilename, false)
 }

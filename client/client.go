@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 )
 
 func main() {
@@ -16,6 +17,9 @@ func main() {
 	privateKeyFile := os.Args[l-3]
 	certificateFile := os.Args[l-2]
 	caFile := os.Args[l-1]
+	fmt.Println("=== private key", os.Args[l-3])
+	fmt.Println("=== cert", os.Args[l-2])
+	fmt.Println("=== ca", os.Args[l-1])
 
 	// Load client cert
 	cert, err := tls.LoadX509KeyPair(certificateFile, privateKeyFile)
@@ -42,7 +46,8 @@ func main() {
 	client := &http.Client{Transport: transport}
 
 	//resp, err := client.Get("https://192.168.99.100:30010")
-	resp, err := client.Get("https://localhost:8443/")
+	//resp, err := client.Get("https://localhost:8443/")
+	resp, err := client.Get("https://https-practice-https-book-server.default.svc:8443/")
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -52,4 +57,8 @@ func main() {
 		log.Fatal("reading response error:", err)
 	}
 	fmt.Printf("%s\n", string(contents))
+	for {
+		fmt.Println(".")
+		time.Sleep(time.Second*2)
+	}
 }

@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "https-book-server.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ template "https-book-server.name" . }}
+    chart: {{ template "https-book-server.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: https
+      protocol: TCP
+      name: https
+  selector:
+    app: {{ template "https-book-server.name" . }}
+    release: {{ .Release.Name }}
